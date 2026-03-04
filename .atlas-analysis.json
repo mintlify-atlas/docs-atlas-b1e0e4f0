@@ -1,0 +1,61 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "GraphDoc",
+  "projectDescription": "Static page generator for documenting GraphQL Schema",
+  "theme": "aspen",
+  "primaryColor": "#dfd0b5",
+  "lightColor": "#a4bb9a",
+  "darkColor": "#4e5252",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Usage",
+        "pages": [
+          "usage/command-reference",
+          "usage/configuration",
+          "usage/schema-sources"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/plugin-development",
+          "guides/custom-templates",
+          "guides/examples"
+        ]
+      },
+      {
+        "group": "Advanced",
+        "pages": [
+          "advanced/troubleshooting",
+          "advanced/contributing"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Generate static HTML documentation from GraphQL schemas",
+    "Support for multiple schema input formats (HTTP endpoint, JSON, GraphQL IDL, JavaScript)",
+    "Extensible plugin system for customization",
+    "Customizable Mustache templates",
+    "Built-in navigation for types, queries, mutations, and directives"
+  ],
+  "publicApiSurface": [
+    "graphdoc --endpoint <url>",
+    "graphdoc --schema <file>",
+    "graphdoc --output <directory>",
+    "graphdoc --plugin <plugin>",
+    "graphdoc --template <template>",
+    "PluginInterface",
+    "NavigationSectionInterface",
+    "DocumentSectionInterface"
+  ]
+}
