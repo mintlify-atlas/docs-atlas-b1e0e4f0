@@ -1,0 +1,496 @@
+---
+title: Configuration
+description: Configure GraphDoc via package.json, command line, or config files
+---
+
+GraphDoc offers flexible configuration through command-line flags, configuration files, or a combination of both. This guide covers all configuration methods and best practices.
+
+## Configuration methods
+
+You can configure GraphDoc in three ways:
+
+1. **Command-line flags** - Direct configuration via CLI arguments
+2. **package.json** - Project-level configuration in the `graphdoc` property
+3. **Custom config file** - Separate configuration file specified with `--config`
+
+<Note>
+  Command-line flags take precedence over configuration file settings, allowing you to override specific options when needed.
+</Note>
+
+## Configuration via package.json
+
+The most common approach is to add a `graphdoc` property to your project's `package.json`. This keeps configuration centralized and version-controlled with your project.
+
+### Basic configuration
+
+```json package.json
+{
+  "name": "my-project",
+  "version": "1.0.0",
+  "graphdoc": {
+    "endpoint": "http://localhost:8080/graphql",
+    "output": "./doc/schema"
+  }
+}
+```
+
+With this configuration, you can run GraphDoc without any flags:
+
+```bash
+graphdoc
+```
+
+### Complete configuration example
+
+Here's a comprehensive example with all available options:
+
+```json package.json
+{
+  "name": "my-api",
+  "version": "2.0.0",
+  "description": "My GraphQL API",
+  "graphdoc": {
+    "endpoint": "https://api.example.com/graphql",
+    "headers": [
+      "Authorization: Bearer token123",
+      "X-API-Version: v2"
+    ],
+    "queries": [
+      "version=v2"
+    ],
+    "output": "./docs/api",
+    "baseUrl": "./",
+    "force": true,
+    "plugins": [
+      "graphdoc/plugins/default",
+      "./lib/custom-plugin.js"
+    ],
+    "template": "graphdoc/template/slds",
+    "data": {
+      "title": "My API Documentation",
+      "version": "2.0",
+      "ga": "UA-XXXXXXXX-X"
+    },
+    "verbose": false
+  }
+}
+```
+
+### Configuration with schema file
+
+If you have a local schema file instead of an endpoint:
+
+```json package.json
+{
+  "name": "my-project",
+  "graphdoc": {
+    "schemaFile": "./schema.graphql",
+    "output": "./docs",
+    "force": true
+  }
+}
+```
+
+## Configuration via custom config file
+
+You can create a separate configuration file and reference it with the `--config` flag. This is useful for maintaining multiple documentation configurations.
+
+<Steps>
+  <Step title="Create config file">
+    Create a JSON file with a `graphdoc` property:
+
+    ```json graphdoc.json
+    {
+      "name": "api-docs",
+      "graphdoc": {
+        "endpoint": "https://api.example.com/graphql",
+        "output": "./public/docs",
+        "force": true
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Run with config flag">
+    Reference the config file when running GraphDoc:
+
+    ```bash
+    graphdoc --config ./graphdoc.json
+    ```
+  </Step>
+</Steps>
+
+### Multiple configuration files
+
+Maintain separate configurations for different environments:
+
+<CodeGroup>
+
+```json config.development.json
+{
+  "graphdoc": {
+    "endpoint": "http://localhost:4000/graphql",
+    "output": "./docs/dev",
+    "verbose": true
+  }
+}
+```
+
+```json config.production.json
+{
+  "graphdoc": {
+    "endpoint": "https://api.example.com/graphql",
+    "headers": ["Authorization: Bearer ${PROD_TOKEN}"],
+    "output": "./docs/prod",
+    "baseUrl": "/api-docs/"
+  }
+}
+```
+
+</CodeGroup>
+
+Then use the appropriate config:
+
+```bash
+# Development
+graphdoc --config ./config.development.json
+
+# Production
+graphdoc --config ./config.production.json
+```
+
+## Configuration via command line
+
+All configuration options can be specified via command-line flags. This is useful for:
+- Quick one-off documentation generation
+- CI/CD environments with environment variables
+- Overriding specific config file settings
+
+```bash
+graphdoc \
+  --endpoint https://api.example.com/graphql \
+  --header "Authorization: Bearer token123" \
+  --output ./docs \
+  --force \
+  --verbose
+```
+
+### Mixing config file and command line
+
+Command-line flags override configuration file settings:
+
+```json package.json
+{
+  "graphdoc": {
+    "endpoint": "http://localhost:4000/graphql",
+    "output": "./docs",
+    "force": false
+  }
+}
+```
+
+```bash
+# Override output directory and enable force
+graphdoc --output ./public/docs --force
+```
+
+This uses the endpoint from `package.json` but overrides the output directory and force flag.
+
+## Configuration options reference
+
+All configuration options available in the `graphdoc` object:
+
+<ParamField path="endpoint" type="string">
+  GraphQL HTTP endpoint URL for introspection.
+
+  ```json
+  "endpoint": "https://api.example.com/graphql"
+  ```
+</ParamField>
+
+<ParamField path="schemaFile" type="string">
+  Path to GraphQL schema file (`.json`, `.graphql`, `.gql`, `.gqls`, `.graphqls`, or `.js`).
+
+  ```json
+  "schemaFile": "./schema.graphql"
+  ```
+</ParamField>
+
+<ParamField path="headers" type="string[]">
+  HTTP headers for endpoint requests. Format: `"Name: Value"`.
+
+  ```json
+  "headers": [
+    "Authorization: Bearer token123",
+    "X-Custom-Header: value"
+  ]
+  ```
+</ParamField>
+
+<ParamField path="queries" type="string[]">
+  Query string parameters for endpoint requests. Format: `"key=value"`.
+
+  ```json
+  "queries": [
+    "token=abc123",
+    "version=v1"
+  ]
+  ```
+</ParamField>
+
+<ParamField path="output" type="string" required>
+  Output directory path for generated documentation.
+
+  ```json
+  "output": "./docs/schema"
+  ```
+</ParamField>
+
+<ParamField path="baseUrl" type="string" default="./">
+  Base URL for documentation links and assets.
+
+  ```json
+  "baseUrl": "/api-docs/"
+  ```
+</ParamField>
+
+<ParamField path="force" type="boolean" default="false">
+  Delete output directory if it exists.
+
+  ```json
+  "force": true
+  ```
+</ParamField>
+
+<ParamField path="plugins" type="string[]" default='["graphdoc/plugins/default"]'>
+  Array of plugin paths or module names.
+
+  ```json
+  "plugins": [
+    "graphdoc/plugins/default",
+    "./lib/my-plugin.js"
+  ]
+  ```
+</ParamField>
+
+<ParamField path="template" type="string" default="graphdoc/template/slds">
+  Path to template directory or module.
+
+  ```json
+  "template": "graphdoc/template/slds"
+  ```
+</ParamField>
+
+<ParamField path="data" type="object" default="{}">
+  Custom data injected into documentation context.
+
+  ```json
+  "data": {
+    "title": "My API",
+    "version": "2.0",
+    "ga": "UA-XXXXXXXX-X",
+    "graphiql": "https://api.example.com/graphiql"
+  }
+  ```
+</ParamField>
+
+<ParamField path="verbose" type="boolean" default="false">
+  Enable verbose logging output.
+
+  ```json
+  "verbose": true
+  ```
+</ParamField>
+
+## Real-world configuration examples
+
+These examples are from actual GraphDoc usage:
+
+### GitHub API configuration
+
+```json example.github.json
+{
+  "name": "github",
+  "version": "1.0.0",
+  "description": "GitHub GraphQL API",
+  "graphdoc": {
+    "schemaFile": "./test/github.json",
+    "output": "./gh-pages/github",
+    "baseUrl": "./",
+    "ga": "UA-54154153-2",
+    "graphiql": "https://developer.github.com/early-access/graphql/explorer/",
+    "logo": "<a href=\"https://developer.github.com/early-access/graphql\" target=\"_blank\"><img src=\"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Logo.png\" /></a>"
+  }
+}
+```
+
+### Pokemon GraphQL configuration
+
+```json example.pokemon.json
+{
+  "name": "graphql-pokemon",
+  "description": "Get information of a Pokémon with GraphQL!",
+  "version": "1.0.0",
+  "graphdoc": {
+    "endpoint": "https://graphql-pokemon.now.sh/",
+    "output": "./gh-pages/pokemon",
+    "baseUrl": "./",
+    "ga": "UA-54154153-2",
+    "graphiql": "https://graphql-pokemon.now.sh/",
+    "logo": "<a href=\"https://github.com/lucasbento/graphql-pokemon\" target=\"_blank\"><img src=\"https://raw.githubusercontent.com/lucasbento/graphql-pokemon/master/content/logo.png\" /></a>"
+  }
+}
+```
+
+### Shopify API configuration
+
+```json example.shopify.json
+{
+  "name": "shopify-api",
+  "description": "Shopify Storefront API",
+  "graphdoc": {
+    "schemaFile": "./test/shopify.json",
+    "output": "./gh-pages/shopify",
+    "baseUrl": "./",
+    "ga": "UA-54154153-2",
+    "graphiql": "https://help.shopify.com/api/storefront-api/graphql-explorer/graphiql",
+    "logo": "<a href=\"/shopify\" target=\"_blank\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/e/e1/Shopify_Logo.png\" /></a>"
+  }
+}
+```
+
+### Star Wars schema (IDL file)
+
+```json example.starWars.json
+{
+  "name": "@2fd/graphdoc",
+  "version": "1.2.0",
+  "description": "Static page generator for documenting GraphQL Schema",
+  "graphdoc": {
+    "schemaFile": "./test/starwars.graphql",
+    "output": "./gh-pages/star-wars",
+    "baseUrl": "./",
+    "ga": "UA-54154153-2"
+  }
+}
+```
+
+### Star Wars schema (JavaScript file)
+
+```json example.starWars-js.json
+{
+  "name": "@2fd/graphdoc",
+  "version": "1.2.0",
+  "description": "Static page generator for documenting GraphQL Schema",
+  "graphdoc": {
+    "schemaFile": "./test/starWars.js",
+    "output": "./gh-pages/star-wars",
+    "baseUrl": "./",
+    "ga": "UA-54154153-2"
+  }
+}
+```
+
+## Environment-specific configuration
+
+Use npm scripts to manage different configurations:
+
+```json package.json
+{
+  "scripts": {
+    "docs:dev": "graphdoc --config ./config.development.json --verbose",
+    "docs:prod": "graphdoc --config ./config.production.json",
+    "docs:local": "graphdoc --schema ./schema.graphql --output ./docs --force"
+  },
+  "graphdoc": {
+    "endpoint": "http://localhost:4000/graphql",
+    "output": "./docs",
+    "force": true,
+    "verbose": true
+  }
+}
+```
+
+Run with:
+
+```bash
+npm run docs:dev
+npm run docs:prod
+npm run docs:local
+
+# Or use default config
+npx graphdoc
+```
+
+## Configuration resolution order
+
+GraphDoc resolves configuration in this order (later values override earlier ones):
+
+<Steps>
+  <Step title="Default values">
+    Built-in defaults from GraphDoc:
+    - `configFile`: `"./package.json"`
+    - `baseUrl`: `"./"`
+    - `template`: `"graphdoc/template/slds"`
+    - `plugins`: `["graphdoc/plugins/default"]`
+    - `force`: `false`
+    - `verbose`: `false`
+    - `data`: `{}`
+  </Step>
+
+  <Step title="Config file values">
+    Values from the configuration file (specified with `--config` or default `package.json`).
+  </Step>
+
+  <Step title="Command-line flags">
+    Values from command-line flags (highest priority).
+  </Step>
+
+  <Step title="Data injection">
+    If `data` is provided via `--data` flag, it's merged with the configuration, with `data` properties taking precedence.
+  </Step>
+</Steps>
+
+## Best practices
+
+<Tip>
+  **Use package.json for project configuration**: Keep your GraphDoc configuration in `package.json` for single-configuration projects. This keeps everything in one place and version-controlled.
+</Tip>
+
+<Tip>
+  **Use separate config files for multiple environments**: When you need different configurations for development, staging, and production, use separate config files and npm scripts.
+</Tip>
+
+<Tip>
+  **Don't commit sensitive tokens**: Avoid hardcoding authentication tokens in configuration files. Use environment variables instead:
+
+  ```json
+  "scripts": {
+    "docs": "graphdoc --endpoint $API_ENDPOINT --header \"Authorization: Bearer $API_TOKEN\" --output ./docs"
+  }
+  ```
+</Tip>
+
+<Tip>
+  **Enable force in CI/CD**: Always use `"force": true` in CI/CD pipelines to ensure clean regeneration of documentation on every build.
+</Tip>
+
+<Tip>
+  **Use verbose during development**: Enable `"verbose": true` when setting up or debugging your documentation generation to see detailed logs.
+</Tip>
+
+<Warning>
+  The `output` directory is required. GraphDoc will fail without it, even if all other configuration is correct.
+</Warning>
+
+## Validation
+
+GraphDoc validates configuration at runtime and will exit with an error if:
+
+- Neither `endpoint` nor `schemaFile` is provided
+- The `output` directory is not specified
+- The schema file has an unsupported extension
+- The output directory exists and `force` is not enabled
+- HTTP request fails (invalid endpoint, authentication, etc.)
+
+Check the error messages for specific guidance on fixing configuration issues.

@@ -1,0 +1,734 @@
+---
+title: Real-world examples
+description: Explore documentation generated from popular GraphQL APIs including GitHub, Shopify, Pokemon, and Star Wars schemas
+---
+
+GraphDoc has been used to generate documentation for numerous production GraphQL APIs. This guide showcases real-world examples from the repository and demonstrates different configuration approaches.
+
+## Live demo sites
+
+The GraphDoc repository hosts several live demos showcasing different GraphQL schemas:
+
+<CardGroup cols={2}>
+  <Card title="Star Wars API" icon="rocket" href="https://2fd.github.io/graphdoc/star-wars">
+    Facebook's test Star Wars GraphQL schema
+  </Card>
+  <Card title="GitHub V4 API" icon="github" href="https://2fd.github.io/graphdoc/github">
+    GitHub's production GraphQL API documentation
+  </Card>
+  <Card title="Shopify API" icon="cart-shopping" href="https://2fd.github.io/graphdoc/shopify/">
+    Shopify's Storefront API documentation
+  </Card>
+  <Card title="Pokemon GraphQL" icon="gamepad" href="https://2fd.github.io/graphdoc/pokemon">
+    Pokemon data GraphQL API
+  </Card>
+</CardGroup>
+
+## Example configurations
+
+Each example includes a JSON configuration file in the repository root. Let's examine how different projects configure GraphDoc.
+
+### Star Wars schema
+
+The simplest example uses a local GraphQL IDL file. From `example.starWars.json:1-12`:
+
+```json
+{
+  "name": "@2fd/graphdoc",
+  "version": "1.2.0",
+  "description": "Static page generator for documenting GraphQL Schema",
+  "homepage": "https://github.com/2fd/graphdoc#readme",
+  "graphdoc": {
+    "ga": "UA-54154153-2",
+    "schemaFile": "./test/starwars.graphql",
+    "output": "./gh-pages/star-wars",
+    "baseUrl": "./"
+  }
+}
+```
+
+<Steps>
+  <Step title="Schema source">
+    Uses a local `.graphql` IDL file at `./test/starwars.graphql`
+  </Step>
+  <Step title="Output directory">
+    Generates documentation to `./gh-pages/star-wars`
+  </Step>
+  <Step title="Base URL">
+    Sets `baseUrl` to `./` for relative links (works in subdirectories)
+  </Step>
+  <Step title="Analytics">
+    Includes Google Analytics tracking with ID `UA-54154153-2`
+  </Step>
+</Steps>
+
+**Generate this example:**
+
+```bash
+cd graphdoc
+graphql -c example.starWars.json
+```
+
+<Note>
+  The Star Wars schema is Facebook's official test schema used throughout GraphQL documentation and examples.
+</Note>
+
+### GitHub V4 API
+
+A more complex example with custom branding and external links. From `example.github.json:1-24`:
+
+```json
+{
+  "name": "github",
+  "version": "x.x.x",
+  "description": "GitHub GraphQL API",
+  "homepage": "https://developer.github.com/early-access/graphql/",
+  "graphdoc": {
+    "ga": "UA-54154153-2",
+    "graphiql": "https://developer.github.com/early-access/graphql/explorer/",
+    "logo": "<a href=\"https://developer.github.com/early-access/graphql\" target=\"_blank\" style=\"display:block;padding:1rem 3rem\"><img src=\"https://assets-cdn.github.com/images/modules/logos_page/GitHub-Logo.png\" /></a>",
+    "schemaFile": "./test/github.json",
+    "output": "./gh-pages/github",
+    "baseUrl": "./"
+  }
+}
+```
+
+<Accordion title="Configuration breakdown">
+  - **schemaFile**: Uses a JSON introspection result instead of IDL
+  - **logo**: Injects custom HTML with the GitHub logo image
+  - **graphiql**: Links to GitHub's GraphQL Explorer for testing queries
+  - **ga**: Tracks usage with Google Analytics
+</Accordion>
+
+**Key features:**
+
+<Tabs>
+  <Tab title="Custom logo">
+    The logo appears in the navigation sidebar:
+
+    ```html
+    <a href="https://developer.github.com/early-access/graphql" 
+       target="_blank" 
+       style="display:block;padding:1rem 3rem">
+      <img src="https://assets-cdn.github.com/images/modules/logos_page/GitHub-Logo.png" />
+    </a>
+    ```
+
+    This replaces the default "GraphQL Schema" heading.
+  </Tab>
+
+  <Tab title="GraphiQL link">
+    Adds a button to the header that opens GitHub's GraphQL Explorer:
+
+    ```html
+    <a href="https://developer.github.com/early-access/graphql/explorer/" target="_blank">
+      GraphiQL
+    </a>
+    ```
+
+    Users can test queries directly against the API.
+  </Tab>
+
+  <Tab title="JSON schema">
+    Instead of a `.graphql` IDL file, this uses `./test/github.json` containing the full introspection query result:
+
+    ```json
+    {
+      "data": {
+        "__schema": {
+          "queryType": { "name": "Query" },
+          "mutationType": { "name": "Mutation" },
+          "types": [...],
+          "directives": [...]
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+**Generate this example:**
+
+```bash
+# Using the pre-downloaded schema
+graphql -c example.github.json
+
+# Or fetch live from endpoint (requires token)
+graphql -e https://api.github.com/graphql \
+  -x "Authorization: bearer YOUR_GITHUB_TOKEN" \
+  -o ./docs/github
+```
+
+### Shopify Storefront API
+
+Demonstrates logo sizing customization. From `example.shopify.json:1-12`:
+
+```json
+{
+  "name": "graphql-pokemon",
+  "description": "Get information of a Pokémon with GraphQL!",
+  "graphdoc": {
+    "ga": "UA-54154153-2",
+    "graphiql": "https://help.shopify.com/api/storefront-api/graphql-explorer/graphiql",
+    "logo": "<a href=\"/shopify\" target=\"_blank\" style=\"display:block;padding:1rem 15%\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/e/e1/Shopify_Logo.png\" /></a>",
+    "schemaFile": "./test/shopify.json",
+    "output": "./gh-pages/shopify",
+    "baseUrl": "./"
+  }
+}
+```
+
+<Accordion title="Logo styling differences">
+  Compare the logo padding:
+  - **GitHub**: `padding:1rem 3rem` (less horizontal padding, wider logo)
+  - **Shopify**: `padding:1rem 15%` (percentage-based for responsive sizing)
+
+  This shows how to adjust logo sizing for different brand assets.
+</Accordion>
+
+### Pokemon GraphQL
+
+Shows using a live endpoint instead of a schema file. From `example.pokemon.json:1-22`:
+
+```json
+{
+  "name": "graphql-pokemon",
+  "description": "Get information of a Pokémon with GraphQL!",
+  "version": "1.0.0",
+  "author": {
+    "name": "Lucas Bento da Silva",
+    "email": "lucas.bsilva@outlook.com",
+    "url": "https://github.com/lucasbento"
+  },
+  "bugs": "https://github.com/lucasbento/graphql-pokemon/issues",
+  "homepage": "https://github.com/lucasbento/graphql-pokemon#readme",
+  "license": "MIT",
+  "repository": "https://github.com/lucasbento/graphql-pokemon",
+  "graphdoc": {
+    "ga": "UA-54154153-2",
+    "graphiql": "https://graphql-pokemon.now.sh/",
+    "logo": "<a href=\"https://github.com/lucasbento/graphql-pokemon\" target=\"_blank\" style=\"display:block;padding:1rem 35%\"><img src=\"https://raw.githubusercontent.com/lucasbento/graphql-pokemon/master/content/logo.png\" /></a>",
+    "endpoint": "https://graphql-pokemon.now.sh/",
+    "output": "./gh-pages/pokemon",
+    "baseUrl": "./"
+  }
+}
+```
+
+<Accordion title="Endpoint vs schema file">
+  This configuration uses `endpoint` instead of `schemaFile`:
+
+  ```json
+  "endpoint": "https://graphql-pokemon.now.sh/"
+  ```
+
+  GraphDoc will:
+  1. Send an introspection query to the endpoint
+  2. Fetch the schema automatically
+  3. Generate documentation from the live API
+
+  This is useful for:
+  - Always documenting the latest schema
+  - CI/CD pipelines that regenerate docs on deployment
+  - APIs that change frequently
+</Accordion>
+
+**Generate from live endpoint:**
+
+```bash
+graphql -e https://graphql-pokemon.now.sh/ -o ./docs/pokemon
+```
+
+## Common configuration patterns
+
+### Pattern 1: Simple local schema
+
+Minimal configuration for documenting a local schema:
+
+```json
+{
+  "name": "my-api",
+  "graphdoc": {
+    "schemaFile": "./schema.graphql",
+    "output": "./docs"
+  }
+}
+```
+
+**Use when:**
+- You have a `.graphql` IDL file
+- You don't need custom branding
+- You're generating docs locally
+
+### Pattern 2: CI/CD with live endpoint
+
+Automatic documentation generation from your production API:
+
+```json
+{
+  "name": "my-api",
+  "graphdoc": {
+    "endpoint": "https://api.example.com/graphql",
+    "headers": [
+      "Authorization: Bearer ${API_TOKEN}"
+    ],
+    "output": "./docs",
+    "force": true
+  }
+}
+```
+
+**Use when:**
+- Deploying documentation automatically
+- Schema changes frequently
+- You want docs to always match production
+
+<Tip>
+  Use environment variables in CI/CD:
+  ```bash
+  export API_TOKEN="your-token"
+  graphql -e https://api.example.com/graphql \
+    -x "Authorization: Bearer $API_TOKEN" \
+    -o ./docs
+  ```
+</Tip>
+
+### Pattern 3: Branded public documentation
+
+Fully customized docs with branding and analytics:
+
+```json
+{
+  "name": "my-api",
+  "description": "My awesome GraphQL API",
+  "graphdoc": {
+    "schemaFile": "./schema.json",
+    "output": "./public/docs",
+    "baseUrl": "/docs/",
+    "logo": "<a href='/'><img src='/logo.png' alt='My API' /></a>",
+    "graphiql": "https://api.example.com/graphiql",
+    "ga": "UA-XXXXX-Y",
+    "template": "./custom-template"
+  }
+}
+```
+
+**Use when:**
+- Publishing public API documentation
+- You need custom branding
+- Tracking usage is important
+- Docs are hosted in a subdirectory
+
+### Pattern 4: Modularized schema with JavaScript
+
+For schemas built with graphql-tools:
+
+```json
+{
+  "name": "my-api",
+  "graphdoc": {
+    "schemaFile": "./schema.js",
+    "output": "./docs"
+  }
+}
+```
+
+Where `schema.js` exports a GraphQL schema:
+
+```javascript
+const { makeExecutableSchema } = require('graphql-tools');
+
+const typeDefs = `
+  type Query {
+    hello: String
+  }
+`;
+
+const resolvers = {
+  Query: {
+    hello: () => 'world'
+  }
+};
+
+module.exports = makeExecutableSchema({ typeDefs, resolvers });
+```
+
+**Use when:**
+- Using [graphql-tools](https://www.graphql-tools.com/) modularized schemas
+- Schema is defined in JavaScript/TypeScript
+- You need to run code to build the schema
+
+## Deployment examples
+
+### GitHub Pages
+
+The GraphDoc repository itself uses GitHub Pages for demos:
+
+<Steps>
+  <Step title="Configure output to gh-pages directory">
+    ```json
+    {
+      "graphdoc": {
+        "output": "./gh-pages/star-wars",
+        "baseUrl": "./"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Generate documentation">
+    ```bash
+    npm run build:docs
+    ```
+  </Step>
+
+  <Step title="Deploy to GitHub Pages">
+    ```bash
+    cd gh-pages
+    git add .
+    git commit -m "Update documentation"
+    git push origin gh-pages
+    ```
+  </Step>
+</Steps>
+
+### Netlify
+
+Deploy documentation automatically on every commit:
+
+<Steps>
+  <Step title="Add build command to package.json">
+    ```json
+    {
+      "scripts": {
+        "build": "graphdoc"
+      },
+      "graphdoc": {
+        "endpoint": "https://api.example.com/graphql",
+        "output": "./dist"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Configure Netlify">
+    In `netlify.toml`:
+    ```toml
+    [build]
+      command = "npm run build"
+      publish = "dist"
+    ```
+  </Step>
+
+  <Step title="Set environment variables">
+    In Netlify dashboard, add `API_TOKEN` for authenticated endpoints.
+  </Step>
+</Steps>
+
+### Self-hosted with nginx
+
+Serve static documentation on your own server:
+
+```nginx
+server {
+    listen 80;
+    server_name docs.example.com;
+    
+    root /var/www/graphql-docs;
+    index index.html;
+    
+    location / {
+        try_files $uri $uri/ =404;
+    }
+    
+    # Cache assets
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+Generate with absolute paths:
+
+```json
+{
+  "graphdoc": {
+    "output": "/var/www/graphql-docs",
+    "baseUrl": "/"
+  }
+}
+```
+
+## Schema source comparison
+
+<Tabs>
+  <Tab title="GraphQL IDL (.graphql)">
+    **File:** `schema.graphql`
+
+    ```graphql
+    type Query {
+      "Get a user by ID"
+      user(id: ID!): User
+    }
+
+    type User {
+      id: ID!
+      name: String!
+      email: String!
+    }
+    ```
+
+    **Configuration:**
+    ```json
+    {
+      "graphdoc": {
+        "schemaFile": "./schema.graphql"
+      }
+    }
+    ```
+
+    **Pros:**
+    - Human-readable
+    - Easy to version control
+    - Standard GraphQL syntax
+
+    **Cons:**
+    - Must be kept in sync with code
+    - No programmatic schema generation
+  </Tab>
+
+  <Tab title="JSON introspection (.json)">
+    **File:** `schema.json`
+
+    ```json
+    {
+      "data": {
+        "__schema": {
+          "queryType": { "name": "Query" },
+          "types": [
+            {
+              "name": "Query",
+              "kind": "OBJECT",
+              "fields": [
+                {
+                  "name": "user",
+                  "description": "Get a user by ID",
+                  "args": [
+                    {
+                      "name": "id",
+                      "type": {
+                        "kind": "NON_NULL",
+                        "ofType": { "kind": "SCALAR", "name": "ID" }
+                      }
+                    }
+                  ],
+                  "type": { "kind": "OBJECT", "name": "User" }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+    **Configuration:**
+    ```json
+    {
+      "graphdoc": {
+        "schemaFile": "./schema.json"
+      }
+    }
+    ```
+
+    **Pros:**
+    - Can be generated from any GraphQL endpoint
+    - Includes all introspection metadata
+    - Works with any schema source
+
+    **Cons:**
+    - Not human-readable
+    - Large file size
+    - Harder to review in version control
+  </Tab>
+
+  <Tab title="JavaScript module (.js)">
+    **File:** `schema.js`
+
+    ```javascript
+    const { buildSchema } = require('graphql');
+
+    module.exports = buildSchema(`
+      type Query {
+        "Get a user by ID"
+        user(id: ID!): User
+      }
+
+      type User {
+        id: ID!
+        name: String!
+        email: String!
+      }
+    `);
+    ```
+
+    **Configuration:**
+    ```json
+    {
+      "graphdoc": {
+        "schemaFile": "./schema.js"
+      }
+    }
+    ```
+
+    **Pros:**
+    - Can run code to build schema
+    - Works with graphql-tools
+    - Can import from multiple files
+
+    **Cons:**
+    - Requires Node.js to read
+    - More complex setup
+  </Tab>
+
+  <Tab title="Live endpoint (HTTP)">
+    **Configuration:**
+    ```json
+    {
+      "graphdoc": {
+        "endpoint": "https://api.example.com/graphql",
+        "headers": ["Authorization: Bearer token"]
+      }
+    }
+    ```
+
+    **Pros:**
+    - Always up to date
+    - No schema file to maintain
+    - Works in CI/CD
+
+    **Cons:**
+    - Requires network access
+    - May need authentication
+    - Slower than local files
+  </Tab>
+</Tabs>
+
+## Full example workflow
+
+Here's a complete example of setting up documentation for a new project:
+
+<Steps>
+  <Step title="Install GraphDoc">
+    ```bash
+    npm install --save-dev @2fd/graphdoc
+    ```
+  </Step>
+
+  <Step title="Add configuration to package.json">
+    ```json
+    {
+      "name": "my-graphql-api",
+      "version": "1.0.0",
+      "description": "My awesome GraphQL API",
+      "scripts": {
+        "docs": "graphdoc",
+        "docs:watch": "nodemon -e graphql -x npm run docs"
+      },
+      "graphdoc": {
+        "schemaFile": "./schema.graphql",
+        "output": "./docs",
+        "baseUrl": "/",
+        "force": true,
+        "plugins": ["@2fd/graphdoc/plugins/default"]
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Generate documentation">
+    ```bash
+    npm run docs
+    ```
+
+    Output:
+    ```
+    ./docs/
+    ├── index.html
+    ├── query.html
+    ├── mutation.html
+    ├── user.html
+    ├── assets/
+    │   ├── code.css
+    │   ├── line-link.js
+    │   └── require-by.css
+    ├── scripts/
+    │   ├── filter-types.js
+    │   ├── focus-active.js
+    │   └── toggle-navigation.js
+    └── styles/
+        └── graphdoc.css
+    ```
+  </Step>
+
+  <Step title="Preview locally">
+    ```bash
+    npx http-server ./docs -p 8080
+    ```
+
+    Open http://localhost:8080 in your browser.
+  </Step>
+
+  <Step title="Deploy to production">
+    <Tabs>
+      <Tab title="GitHub Pages">
+        ```bash
+        npm run docs
+        git add docs/
+        git commit -m "Update documentation"
+        git subtree push --prefix docs origin gh-pages
+        ```
+      </Tab>
+      <Tab title="Netlify">
+        Connect your GitHub repo and Netlify will automatically run `npm run docs` on every push.
+      </Tab>
+      <Tab title="AWS S3">
+        ```bash
+        npm run docs
+        aws s3 sync ./docs s3://my-docs-bucket --delete
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Comparison with other tools
+
+<CardGroup cols={2}>
+  <Card title="GraphQL Playground" icon="play">
+    **Best for:** Interactive query testing
+    
+    **GraphDoc advantage:** Static HTML output, no server required, better for public documentation
+  </Card>
+  <Card title="GraphiQL" icon="terminal">
+    **Best for:** Development and debugging
+    
+    **GraphDoc advantage:** Searchable type browser, works offline, can be versioned
+  </Card>
+  <Card title="Spectaql" icon="file-code">
+    **Best for:** OpenAPI-style documentation
+    
+    **GraphDoc advantage:** Plugin system, customizable templates, better navigation
+  </Card>
+  <Card title="Apollo Studio" icon="rocket">
+    **Best for:** Teams using Apollo
+    
+    **GraphDoc advantage:** Self-hosted, no external dependencies, free, open source
+  </Card>
+</CardGroup>
+
+<Tip>
+  Combine tools! Use GraphDoc for public documentation, GraphiQL for development, and Apollo Studio for monitoring.
+</Tip>

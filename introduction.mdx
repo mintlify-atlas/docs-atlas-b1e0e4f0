@@ -1,0 +1,134 @@
+---
+title: Introduction
+description: GraphDoc is a static page generator that creates beautiful HTML documentation from your GraphQL schemas
+---
+
+GraphDoc is a command-line tool that automatically generates static HTML documentation from GraphQL schemas. It transforms your GraphQL API schema into a browsable, searchable documentation site with zero configuration required.
+
+## What is GraphDoc?
+
+GraphDoc takes your GraphQL schema—whether from a live endpoint, an introspection JSON file, GraphQL IDL files, or JavaScript schema definitions—and generates a complete static documentation website. The tool parses your schema and creates individual pages for each type, directive, field, and argument, making your API easy to explore and understand.
+
+## Key features
+
+GraphDoc provides several powerful features that make it ideal for documenting GraphQL APIs:
+
+<CardGroup cols={2}>
+  <Card title="Multiple input sources" icon="input-pipe">
+    Generate documentation from live GraphQL endpoints, JSON introspection files, GraphQL schema files (.graphql, .gql), or JavaScript schema modules
+  </Card>
+  
+  <Card title="Zero configuration" icon="bolt">
+    Works out of the box with sensible defaults—just point it at your schema and go
+  </Card>
+  
+  <Card title="Plugin system" icon="puzzle-piece">
+    Extend functionality with plugins to customize navigation, document sections, headers, and assets
+  </Card>
+  
+  <Card title="Custom templates" icon="paintbrush">
+    Use the default Salesforce Lightning Design System template or create your own using Mustache
+  </Card>
+  
+  <Card title="Static output" icon="file-code">
+    Generates static HTML files that you can host anywhere—GitHub Pages, Netlify, S3, or any web server
+  </Card>
+  
+  <Card title="Rich schema display" icon="diagram-project">
+    Automatically displays types, fields, arguments, directives, deprecations, and descriptions from your schema
+  </Card>
+</CardGroup>
+
+## When to use GraphDoc
+
+GraphDoc is the right choice when you need to:
+
+- **Document public APIs**: Create comprehensive documentation for external developers consuming your GraphQL API
+- **Internal API documentation**: Help your team understand and explore internal GraphQL services
+- **Version control documentation**: Generate documentation as part of your CI/CD pipeline and track changes over time
+- **Offline documentation**: Provide documentation that doesn't require a live server or internet connection
+- **Custom documentation sites**: Build on top of GraphDoc's plugin system to create tailored documentation experiences
+
+<Note>
+GraphDoc uses the standard GraphQL introspection query to extract schema information. Make sure introspection is enabled on your GraphQL endpoint if you're generating documentation from a live API.
+</Note>
+
+## How it works
+
+GraphDoc follows a simple three-step process:
+
+<Steps>
+  <Step title="Load schema">
+    GraphDoc connects to your GraphQL endpoint or reads your schema file and runs an introspection query to extract the complete type system
+  </Step>
+  
+  <Step title="Process with plugins">
+    The schema data passes through configured plugins, which can modify navigation, add sections, inject assets, or customize headers
+  </Step>
+  
+  <Step title="Generate static files">
+    GraphDoc renders HTML pages using Mustache templates, creating one page per type/directive plus an index page, along with all necessary assets
+  </Step>
+</Steps>
+
+## Architecture
+
+GraphDoc is built with TypeScript and uses several key technologies:
+
+- **GraphQL.js**: For schema introspection and parsing
+- **Mustache**: Template rendering engine
+- **Salesforce Lightning Design System**: Default UI components and styling
+- **Plugin architecture**: Modular design for extensibility
+
+<Tip>
+The generated documentation is completely static—no server-side rendering or JavaScript frameworks required. This makes it fast, secure, and easy to host.
+</Tip>
+
+## Supported schema formats
+
+GraphDoc can generate documentation from multiple schema sources:
+
+<Accordion title="GraphQL HTTP endpoint">
+  Point GraphDoc at any GraphQL endpoint that supports introspection. You can include custom headers and query parameters for authentication.
+  
+  ```bash
+  graphdoc -e https://api.example.com/graphql -o ./docs
+  ```
+</Accordion>
+
+<Accordion title="JSON introspection file">
+  Use a pre-generated introspection query result saved as JSON. This is useful for version control or when introspection is disabled in production.
+  
+  ```bash
+  graphdoc -s ./schema.json -o ./docs
+  ```
+</Accordion>
+
+<Accordion title="GraphQL IDL files">
+  Parse GraphQL Schema Definition Language files (.graphql, .gql, .graphqls, .gqls).
+  
+  ```bash
+  graphdoc -s ./schema.graphql -o ./docs
+  ```
+</Accordion>
+
+<Accordion title="JavaScript schema modules">
+  Load schema from JavaScript files that export a GraphQL schema object (useful for modularized schemas using graphql-tools).
+  
+  ```bash
+  graphdoc -s ./schema.js -o ./docs
+  ```
+</Accordion>
+
+## Example output
+
+GraphDoc has been used to document several well-known GraphQL APIs:
+
+- [GitHub V4 API](https://2fd.github.io/graphdoc/github) - Complete documentation of GitHub's GraphQL API
+- [Shopify API](https://2fd.github.io/graphdoc/shopify/) - Shopify's extensive e-commerce API
+- [Pokemon GraphQL](https://2fd.github.io/graphdoc/pokemon) - Pokemon data API documentation
+- [Star Wars API](https://2fd.github.io/graphdoc/star-wars) - The classic GraphQL example
+
+<Warning>
+GraphDoc requires Node.js and npm to be installed. The tool generates files based on your schema structure, so large schemas will produce more files and may take longer to generate.
+</Warning>

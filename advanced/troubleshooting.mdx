@@ -1,0 +1,513 @@
+---
+title: Troubleshooting
+description: Common issues, error messages, and solutions for GraphDoc
+---
+
+This guide covers common issues you may encounter when using GraphDoc and how to resolve them.
+
+## Installation issues
+
+### NPM installation fails
+
+If you encounter errors during installation:
+
+<Steps>
+  <Step title="Clear NPM cache">
+    ```bash
+    npm cache clean --force
+    ```
+  </Step>
+  <Step title="Reinstall GraphDoc">
+    ```bash
+    npm install -g @2fd/graphdoc
+    ```
+  </Step>
+  <Step title="Check Node.js version">
+    Ensure you're running Node.js version 10 or higher:
+    ```bash
+    node --version
+    ```
+  </Step>
+</Steps>
+
+### Permission errors on global install
+
+If you see `EACCES` permission errors:
+
+```bash
+sudo npm install -g @2fd/graphdoc
+```
+
+<Warning>
+  Consider using a Node version manager like `nvm` to avoid permission issues with global packages.
+</Warning>
+
+## Schema loading errors
+
+### "Flag output (-o, --output) is required"
+
+This error occurs when you don't specify an output directory.
+
+**Solution:** Always provide the `-o` or `--output` flag:
+
+```bash
+graphdoc -s ./schema.graphql -o ./doc/schema
+```
+
+### "Endpoint (--endpoint, -e) or Schema File (--schema, -s) are require."
+
+GraphDoc needs either a schema file or an endpoint to generate documentation.
+
+**Solution:** Provide one of the following:
+
+<Accordion title="Using a GraphQL endpoint">
+  ```bash
+  graphdoc -e http://localhost:8080/graphql -o ./docs
+  ```
+</Accordion>
+
+<Accordion title="Using a schema file">
+  ```bash
+  graphdoc -s ./schema.graphql -o ./docs
+  ```
+</Accordion>
+
+### "Unexpected schema extension name"
+
+GraphDoc only supports specific schema file formats. This error appears when you use an unsupported file extension.
+
+**Supported formats:**
+
+- `.json` - JSON introspection result
+- `.graphql` - GraphQL IDL/SDL format
+- `.gql` - GraphQL IDL/SDL format
+- `.gqls` - GraphQL IDL/SDL format
+- `.graphqls` - GraphQL IDL/SDL format
+- `.js` - JavaScript modularized schema
+
+**Solution:** Rename your schema file to use a supported extension:
+
+```bash
+mv schema.txt schema.graphql
+graphdoc -s ./schema.graphql -o ./docs
+```
+
+### "Unexpected HTTP Status Code"
+
+This error occurs when the GraphQL endpoint returns a non-200 status code.
+
+**Common causes:**
+
+<Accordion title="Authentication required">
+  Add authentication headers using the `-x` flag:
+  ```bash
+  graphdoc -e https://api.example.com/graphql \
+    -x "Authorization: Bearer YOUR_TOKEN" \
+    -o ./docs
+  ```
+</Accordion>
+
+<Accordion title="Wrong endpoint URL">
+  Verify your endpoint URL is correct:
+  ```bash
+  curl -X POST https://api.example.com/graphql \
+    -H "Content-Type: application/json" \
+    -d '{"query": "{__schema{types{name}}}"}'
+  ```
+</Accordion>
+
+<Accordion title="CORS or network issues">
+  Ensure the GraphQL server is accessible from your machine and doesn't have CORS restrictions for introspection queries.
+</Accordion>
+
+### "Unexpected response from endpoint"
+
+This error occurs when the endpoint returns invalid JSON or non-GraphQL response.
+
+**Solution:**
+
+<Steps>
+  <Step title="Test the endpoint manually">
+    ```bash
+    curl -X POST http://localhost:8080/graphql \
+      -H "Content-Type: application/json" \
+      -d '{"query": "{__schema{types{name}}}"}'
+    ```
+  </Step>
+  <Step title="Check introspection is enabled">
+    Some GraphQL servers disable introspection in production. Ensure it's enabled or use a schema file instead.
+  </Step>
+  <Step title="Verify endpoint returns JSON">
+    The endpoint must return JSON, not HTML or plain text.
+  </Step>
+</Steps>
+
+### JSON schema file errors
+
+If you're loading a `.json` schema file and encounter errors:
+
+**Solution:** Ensure your JSON file contains a valid introspection query result. It should have one of these structures:
+
+```json
+{
+  "data": {
+    "__schema": {
+      "types": [...],
+      "directives": [...]
+    }
+  }
+}
+```
+
+or:
+
+```json
+{
+  "__schema": {
+    "types": [...],
+    "directives": [...]
+  }
+}
+```
+
+### IDL/GraphQL schema file errors
+
+If you're loading a `.graphql` or `.gql` file and see parsing errors:
+
+**Solution:** Ensure your schema file:
+
+1. Contains valid GraphQL SDL syntax
+2. Includes all type definitions
+3. Can be parsed by `buildSchema` from graphql-js
+
+```graphql
+type Query {
+  hello: String
+}
+
+type Mutation {
+  updateUser(id: ID!): User
+}
+
+type User {
+  id: ID!
+  name: String
+}
+```
+
+### JavaScript schema loader errors
+
+When using `.js` schema files, you may see: "Unexpected schema definition on [object], must be an array or function"
+
+**Solution:** Your JavaScript file must export an array of type definitions or a function returning an array:
+
+<Accordion title="Export array of definitions">
+  ```javascript
+  // schema.js
+  module.exports = [
+    `type Query {
+      hello: String
+    }`,
+    `type User {
+      id: ID!
+      name: String
+    }`
+  ];
+  ```
+
+  Or using ES6:
+  ```javascript
+  // schema.js
+  export default [
+    `type Query {
+      hello: String
+    }`,
+    `type User {
+      id: ID!
+      name: String
+    }`
+  ];
+  ```
+</Accordion>
+
+<Accordion title="Export function returning array">
+  ```javascript
+  // schema.js
+  module.exports = function() {
+    return [
+      `type Query {
+        hello: String
+      }`,
+      `type User {
+        id: ID!
+        name: String
+      }`
+    ];
+  };
+  ```
+</Accordion>
+
+## Output directory issues
+
+### "[directory] already exists (delete it or use the --force flag)"
+
+GraphDoc won't overwrite an existing output directory by default.
+
+**Solution:** Use the `-f` or `--force` flag:
+
+```bash
+graphdoc -s ./schema.graphql -o ./docs -f
+```
+
+<Warning>
+  The `--force` flag will delete the entire output directory before generating new documentation.
+</Warning>
+
+### "Unexpected output: [path] is not a directory"
+
+The output path exists but is a file, not a directory.
+
+**Solution:** Remove the file or choose a different output path:
+
+```bash
+rm ./docs  # If it's a file
+graphdoc -s ./schema.graphql -o ./docs
+```
+
+### "The index partial is missing"
+
+This error occurs when the template directory doesn't contain an `index.mustache` file.
+
+**Solution:** Use the default template or ensure your custom template includes `index.mustache`:
+
+```bash
+graphdoc -s ./schema.graphql -o ./docs
+# Don't specify -t flag to use default template
+```
+
+## Plugin errors
+
+### Plugin loading fails
+
+If a plugin can't be loaded:
+
+<Steps>
+  <Step title="Verify plugin path">
+    Check that the plugin path is correct and the module exists:
+    ```bash
+    # For installed plugins
+    npm list @plugin-name
+    
+    # For local plugins
+    ls -la ./lib/plugin/my-plugin.js
+    ```
+  </Step>
+  <Step title="Check plugin exports default">
+    Plugins must export a default constructor or object. See lib/command.ts:266-272.
+  </Step>
+  <Step title="Install missing dependencies">
+    If the plugin has dependencies, install them:
+    ```bash
+    npm install
+    ```
+  </Step>
+</Steps>
+
+### Default plugin not found
+
+If you see errors about the default plugin:
+
+**Solution:** The default plugin should be at `graphdoc/plugins/default`. If it's missing, reinstall GraphDoc:
+
+```bash
+npm install -g @2fd/graphdoc --force
+```
+
+## Configuration issues
+
+### package.json configuration not loading
+
+If your `package.json` configuration isn't being read:
+
+<Steps>
+  <Step title="Verify JSON syntax">
+    Ensure your `package.json` is valid JSON:
+    ```bash
+    node -e "require('./package.json')"
+    ```
+  </Step>
+  <Step title="Check graphdoc property">
+    Configuration must be under the `graphdoc` key:
+    ```json
+    {
+      "name": "my-project",
+      "graphdoc": {
+        "endpoint": "http://localhost:8080/graphql",
+        "output": "./doc/schema"
+      }
+    }
+    ```
+  </Step>
+  <Step title="Specify config file">
+    If your config is in a different file, use the `-c` flag:
+    ```bash
+    graphdoc -c ./config.json
+    ```
+  </Step>
+</Steps>
+
+### Custom data injection issues
+
+When using the `-d` or `--data` flag:
+
+**Solution:** Ensure you're passing valid JSON:
+
+```bash
+graphdoc -s ./schema.graphql -o ./docs \
+  -d '{"logo": "<img src='logo.png' />", "title": "My API"}'
+```
+
+<Tip>
+  Escape quotes properly in your shell, or use single quotes for the outer string and double quotes inside the JSON.
+</Tip>
+
+## Template issues
+
+### Custom template not found
+
+If your custom template can't be loaded:
+
+**Solution:** Provide the absolute path or relative path from your project root:
+
+```bash
+graphdoc -s ./schema.graphql -o ./docs -t ./custom-template
+```
+
+The template directory must contain `.mustache` files, including `index.mustache`.
+
+### Template rendering errors
+
+If you see Mustache template errors:
+
+<Accordion title="Check template syntax">
+  Ensure your `.mustache` files have valid syntax. Common issues:
+  - Unclosed tags: `{{#section}}` without `{{/section}}`
+  - Incorrect variable names
+  - Invalid partials references
+</Accordion>
+
+<Accordion title="Verify partials">
+  All partials must be separate `.mustache` files in the template directory.
+</Accordion>
+
+## Debugging tips
+
+### Enable verbose output
+
+Use the `-v` or `--verbose` flag to see detailed information:
+
+```bash
+graphdoc -s ./schema.graphql -o ./docs -v
+```
+
+This will show:
+- Plugin loading information
+- Asset collection details
+- File rendering progress
+- Full error stack traces
+
+### Check GraphDoc version
+
+```bash
+graphdoc -V
+```
+
+### Test schema loading separately
+
+Create a simple test script to verify your schema loads correctly:
+
+```javascript
+// test-schema.js
+const { buildSchema } = require('graphql');
+const fs = require('fs');
+
+const schemaFile = fs.readFileSync('./schema.graphql', 'utf8');
+try {
+  const schema = buildSchema(schemaFile);
+  console.log('Schema loaded successfully!');
+  console.log('Types:', schema.getTypeMap());
+} catch (error) {
+  console.error('Schema error:', error.message);
+}
+```
+
+Run with:
+
+```bash
+node test-schema.js
+```
+
+### Validate your GraphQL endpoint
+
+Test your endpoint with a simple introspection query:
+
+```bash
+curl -X POST http://localhost:8080/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query { __schema { queryType { name } } }"
+  }'
+```
+
+### Check for conflicting dependencies
+
+If you're experiencing strange behavior:
+
+```bash
+npm list graphql
+```
+
+Ensure you don't have multiple versions of `graphql` installed.
+
+## Performance issues
+
+### Generation is slow for large schemas
+
+For large schemas (like GitHub's API with 1000+ types):
+
+<Tip>
+  This is normal. The GitHub schema takes several seconds to generate. Use `-v` to see progress.
+</Tip>
+
+### Out of memory errors
+
+If Node.js runs out of memory:
+
+```bash
+NODE_OPTIONS="--max-old-space-size=4096" graphdoc -s ./schema.json -o ./docs
+```
+
+## Getting help
+
+If you're still experiencing issues:
+
+<Steps>
+  <Step title="Check GitHub issues">
+    Search existing issues: [github.com/2fd/graphdoc/issues](https://github.com/2fd/graphdoc/issues)
+  </Step>
+  <Step title="Create a minimal reproduction">
+    Create the smallest possible schema that reproduces your issue.
+  </Step>
+  <Step title="File a bug report">
+    Include:
+    - GraphDoc version (`graphdoc -V`)
+    - Node.js version (`node --version`)
+    - Full command you're running
+    - Full error message with stack trace (`-v` flag)
+    - Sample schema (if possible)
+  </Step>
+</Steps>
+
+<Info>
+  GraphDoc uses the `@2fd/command` package for CLI parsing and `graphql` package version 15.x for schema processing.
+</Info>

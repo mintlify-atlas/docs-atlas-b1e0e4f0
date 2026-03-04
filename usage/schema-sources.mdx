@@ -1,0 +1,821 @@
+---
+title: Schema sources
+description: Different ways to provide your GraphQL schema to GraphDoc
+---
+
+GraphDoc supports multiple methods for loading GraphQL schemas. You can use a live HTTP endpoint, local schema files in various formats, or JavaScript modules. This guide covers all schema source options and their use cases.
+
+## Overview
+
+GraphDoc supports four schema loading methods:
+
+1. **HTTP endpoint** - Query a live GraphQL API via introspection
+2. **JSON file** - Use a pre-generated introspection result
+3. **GraphQL IDL/SDL file** - Load from schema definition language files
+4. **JavaScript file** - Import modularized schema definitions
+
+<Note>
+  You must provide either `--endpoint` or `--schema-file`, but not both. GraphDoc determines the loader based on the file extension when using `--schema-file`.
+</Note>
+
+## HTTP endpoint
+
+The HTTP endpoint method queries a live GraphQL server using introspection to retrieve the schema. This is the most common approach for documenting production APIs.
+
+### Basic usage
+
+```bash
+graphdoc --endpoint http://localhost:8080/graphql --output ./docs
+```
+
+GraphDoc sends an introspection query to the endpoint and generates documentation from the response.
+
+### With authentication
+
+Most production APIs require authentication. Use the `--header` flag to include authentication tokens:
+
+```bash
+graphdoc \
+  --endpoint https://api.github.com/graphql \
+  --header "Authorization: Bearer ghp_your_github_token" \
+  --output ./docs
+```
+
+### Multiple headers
+
+You can include multiple headers by repeating the `--header` flag:
+
+```bash
+graphdoc \
+  --endpoint https://api.example.com/graphql \
+  --header "Authorization: Bearer token123" \
+  --header "X-API-Version: v2" \
+  --header "X-Client-Name: GraphDoc" \
+  --output ./docs
+```
+
+### Query parameters
+
+Some APIs require query string parameters. Use the `--query` flag:
+
+```bash
+graphdoc \
+  --endpoint https://api.example.com/graphql \
+  --query "token=abc123" \
+  --query "version=v1" \
+  --output ./docs
+```
+
+### Configuration example
+
+In `package.json`:
+
+```json package.json
+{
+  "graphdoc": {
+    "endpoint": "https://graphql-pokemon.now.sh/",
+    "output": "./docs/pokemon"
+  }
+}
+```
+
+### How it works
+
+When you provide an endpoint, GraphDoc:
+
+1. Sends a POST request with the GraphQL introspection query
+2. Includes any headers specified with `--header`
+3. Appends any query parameters specified with `--query`
+4. Parses the introspection result from the response
+5. Extracts the schema from `data.__schema` or `__schema` property
+
+The introspection query requests all type information, directives, and relationships from the schema.
+
+### Error handling
+
+<Accordion title="HTTP 401 Unauthorized">
+  **Error:** `Unexpected HTTP Status Code 401 (Unauthorized)`
+
+  **Cause:** The endpoint requires authentication and valid credentials were not provided.
+
+  **Solution:** Add authentication headers:
+
+  ```bash
+  graphdoc \
+    --endpoint https://api.example.com/graphql \
+    --header "Authorization: Bearer your-token" \
+    --output ./docs
+  ```
+</Accordion>
+
+<Accordion title="HTTP 404 Not Found">
+  **Error:** `Unexpected HTTP Status Code 404 (Not Found)`
+
+  **Cause:** The endpoint URL is incorrect or the GraphQL API is not available at that path.
+
+  **Solution:** Verify the endpoint URL. Common paths are `/graphql`, `/api/graphql`, or `/v1/graphql`.
+</Accordion>
+
+<Accordion title="Connection refused">
+  **Error:** `Error: connect ECONNREFUSED`
+
+  **Cause:** The server is not running or is not accessible.
+
+  **Solution:** Ensure the GraphQL server is running and accessible at the specified URL.
+</Accordion>
+
+## JSON file
+
+The JSON file method uses a pre-generated GraphQL introspection query result. This is useful when you already have an introspection result or when the API is not accessible during documentation generation.
+
+### File format
+
+The JSON file must contain the complete result of a GraphQL introspection query:
+
+```json schema.json
+{
+  "data": {
+    "__schema": {
+      "queryType": { "name": "Query" },
+      "mutationType": { "name": "Mutation" },
+      "subscriptionType": null,
+      "types": [
+        {
+          "kind": "OBJECT",
+          "name": "Query",
+          "description": "Root query type",
+          "fields": [
+            {
+              "name": "user",
+              "description": "Get a user by ID",
+              "args": [
+                {
+                  "name": "id",
+                  "description": "User ID",
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "ID",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "OBJECT",
+                "name": "User",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        }
+      ],
+      "directives": []
+    }
+  }
+}
+```
+
+Alternatively, the Apollo format (without the `data` wrapper):
+
+```json schema.json
+{
+  "__schema": {
+    "queryType": { "name": "Query" },
+    "mutationType": null,
+    "subscriptionType": null,
+    "types": [...],
+    "directives": [...]
+  }
+}
+```
+
+### Usage
+
+```bash
+graphdoc --schema ./schema.json --output ./docs
+```
+
+### Configuration example
+
+```json package.json
+{
+  "graphdoc": {
+    "schemaFile": "./test/github.json",
+    "output": "./docs/github"
+  }
+}
+```
+
+### Generating introspection JSON
+
+You can generate an introspection JSON file using various tools:
+
+<CodeGroup>
+
+```bash GraphQL CLI
+# Install
+npm install -g graphql-cli
+
+# Generate introspection
+graphql get-schema --endpoint https://api.example.com/graphql --output schema.json
+```
+
+```bash curl
+curl -X POST https://api.example.com/graphql \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer token123" \
+  -d '{"query": "query IntrospectionQuery { __schema { queryType { name } mutationType { name } subscriptionType { name } types { ...FullType } directives { name description locations args { ...InputValue } } } } fragment FullType on __Type { kind name description fields(includeDeprecated: true) { name description args { ...InputValue } type { ...TypeRef } isDeprecated deprecationReason } inputFields { ...InputValue } interfaces { ...TypeRef } enumValues(includeDeprecated: true) { name description isDeprecated deprecationReason } possibleTypes { ...TypeRef } } fragment InputValue on __InputValue { name description type { ...TypeRef } defaultValue } fragment TypeRef on __Type { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name } } } } } } } }"}' \
+  > schema.json
+```
+
+```javascript Node.js
+const { graphql, introspectionQuery } = require('graphql');
+const schema = require('./schema');
+const fs = require('fs');
+
+graphql(schema, introspectionQuery)
+  .then(result => {
+    fs.writeFileSync('schema.json', JSON.stringify(result, null, 2));
+  });
+```
+
+</CodeGroup>
+
+### Use cases
+
+- **Offline documentation**: Generate docs without accessing the live API
+- **CI/CD pipelines**: Use a cached schema to avoid API calls during builds
+- **Legacy APIs**: Document APIs that are no longer accessible
+- **Version control**: Track schema changes by committing JSON files
+
+## GraphQL IDL file
+
+The GraphQL Interface Definition Language (IDL), also called Schema Definition Language (SDL), is the human-readable syntax for defining GraphQL schemas.
+
+### Supported extensions
+
+GraphDoc recognizes these file extensions as IDL files:
+- `.graphql`
+- `.gql`
+- `.gqls`
+- `.graphqls`
+
+### File format
+
+```graphql schema.graphql
+# A character in the Star Wars Trilogy
+interface Character {
+  # The id of the character.
+  id: ID!
+
+  # The name of the character.
+  name: String
+
+  # The friends of the character, or an empty list if they have none.
+  friends: [Character]
+
+  # Which movies they appear in.
+  appearsIn: [Episode]
+}
+
+# A humanoid creature in the Star Wars universe.
+type Human implements Character {
+  # The id of the human.
+  id: ID!
+
+  # The name of the human.
+  name: String
+
+  # The friends of the human, or an empty list if they have none.
+  friends: [Character]
+
+  # Which movies they appear in.
+  appearsIn: [Episode]
+
+  # The home planet of the human, or null if unknown.
+  homePlanet: String
+}
+
+# One of the films in the Star Wars Trilogy
+enum Episode {
+  # Released in 1977.
+  NEWHOPE
+
+  # Released in 1980.
+  EMPIRE
+
+  # Released in 1983.
+  JEDI
+}
+
+# Root query
+type Query {
+  # Return the hero by episode.
+  hero(
+    # If omitted, returns the hero of the whole saga.
+    episode: Episode
+  ): Character
+
+  # Return the Human by ID.
+  human(
+    # id of the human
+    id: ID!
+  ): Human
+}
+
+# Root Mutation
+type Mutation {
+  # Save the favorite episode.
+  favorite(
+    # Favorite episode.
+    episode: Episode!
+  ): Episode
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+```
+
+### Usage
+
+```bash
+graphdoc --schema ./schema.graphql --output ./docs
+```
+
+### Configuration example
+
+```json package.json
+{
+  "graphdoc": {
+    "schemaFile": "./schema.graphql",
+    "output": "./docs/api"
+  }
+}
+```
+
+### How it works
+
+When you provide an IDL file, GraphDoc:
+
+1. Reads the file contents (located at `lib/schema-loader/idl.ts:19-20`)
+2. Builds a GraphQL schema using `buildSchema()` from `graphql-js` (line 22)
+3. Executes the introspection query against the built schema (lines 21-24)
+4. Extracts the schema from the introspection result
+
+This approach leverages the standard GraphQL.js library to parse and validate your schema.
+
+### Use cases
+
+- **Schema-first development**: Document your schema before implementation
+- **Version control friendly**: IDL files are human-readable and diff-friendly
+- **Standard format**: Works with any tool that outputs GraphQL SDL
+- **Manual schema definition**: Perfect for hand-crafted schemas
+
+## JavaScript file
+
+The JavaScript file method supports modularized schema definitions, which is common in projects using `graphql-tools` or similar libraries.
+
+### File format
+
+GraphDoc supports JavaScript files that export schema definitions. The file must have a `.js` extension and export one of these formats:
+
+#### Array export (default export)
+
+```javascript schema.js
+const Query = `
+  type Query {
+    user(id: ID!): User
+  }
+`;
+
+const User = `
+  type User {
+    id: ID!
+    name: String!
+    email: String!
+  }
+`;
+
+const Schema = `
+  schema {
+    query: Query
+  }
+`;
+
+export default [Query, User, Schema];
+```
+
+#### Function returning array
+
+```javascript schema.js
+const Character = `
+  interface Character {
+    id: ID!
+    name: String
+    friends: [Character]
+  }
+`;
+
+const Human = `
+  type Human implements Character {
+    id: ID!
+    name: String
+    friends: [Character]
+    homePlanet: String
+  }
+`;
+
+const Query = `
+  type Query {
+    human(id: ID!): Human
+  }
+`;
+
+const Schema = `
+  schema {
+    query: Query
+  }
+`;
+
+export default () => [Character, Human, Query, Schema];
+```
+
+### Usage
+
+```bash
+graphdoc --schema ./schema.js --output ./docs
+```
+
+### Configuration example
+
+```json package.json
+{
+  "graphdoc": {
+    "schemaFile": "./test/starWars.js",
+    "output": "./docs/star-wars"
+  }
+}
+```
+
+### How it works
+
+When you provide a JavaScript file, GraphDoc (from `lib/schema-loader/js.ts:15-49`):
+
+1. Requires the module (line 19)
+2. Checks if the module exports a `default` property (lines 23-25)
+3. Determines if it's an array or function:
+   - If array: Uses it directly (line 29)
+   - If function: Calls it and uses the returned array (line 32-33)
+4. Joins all array elements into a single string (lines 29, 33)
+5. Builds a schema using `buildSchema()` (line 41)
+6. Executes introspection query against the schema (lines 40-43)
+7. Extracts the schema from the result
+
+### Real-world example
+
+Here's the complete Star Wars example from the GraphDoc test suite:
+
+```javascript test/starWars.js
+const Character = `
+# A character in the Star Wars Trilogy
+interface Character {
+  # The id of the character.
+  id: ID!
+  # The name of the character.
+  name: String
+  # The friends of the character, or an empty list if they have none.
+  friends: [Character]
+  # Which movies they appear in.
+  appearsIn: [Episode]
+  # All secrets about their past.
+  secretBackstory: String
+}
+`;
+
+const Droid = `
+# A mechanical creature in the Star Wars universe.
+type Droid implements Character {
+  # The id of the droid.
+  id: ID!
+  # The name of the droid.
+  name: String
+  # The friends of the droid, or an empty list if they have none.
+  friends: [Character]
+  # Which movies they appear in.
+  appearsIn: [Episode]
+  # Construction date and the name of the designer.
+  secretBackstory: String
+  # The primary function of the droid.
+  primaryFunction: String
+}
+`;
+
+const Episode = `
+# One of the films in the Star Wars Trilogy
+enum Episode {
+  # Released in 1977.
+  NEWHOPE
+  # Released in 1980.
+  EMPIRE
+  # Released in 1983.
+  JEDI
+}
+`;
+
+const Human = `
+# A humanoid creature in the Star Wars universe.
+type Human implements Character {
+  # The id of the human.
+  id: ID!
+  # The name of the human.
+  name: String
+  # The friends of the human, or an empty list if they have none.
+  friends: [Character]
+  # Which movies they appear in.
+  appearsIn: [Episode]
+  # The home planet of the human, or null if unknown.
+  homePlanet: String
+  # Where are they from and how they came to be who they are.
+  secretBackstory: String
+}
+`;
+
+const Mutation = `
+# Root Mutation
+type Mutation {
+  # Save the favorite episode.
+  favorite(
+    # Favorite episode.
+    episode: Episode!
+  ): Episode
+}
+`;
+
+const Query = `
+# Root query
+type Query {
+  # Return the hero by episode.
+  hero(
+    # If omitted, returns the hero of the whole saga.
+    episode: Episode
+  ): Character
+  # Return the Human by ID.
+  human(
+    # id of the human
+    id: ID!
+  ): Human
+  # Return the Droid by ID.
+  droid(
+    # id of the droid
+    id: ID!
+  ): Droid
+}
+`;
+
+const Schema = `
+schema {
+  query: Query
+  mutation: Mutation
+}
+`;
+
+export default () => [
+  Character,
+  Droid,
+  Episode,
+  Human,
+  Mutation,
+  Query,
+  Schema
+];
+```
+
+### Use cases
+
+- **Modularized schemas**: Perfect for projects using `graphql-tools` with separate type definition files
+- **Code generation**: When your schema is generated by a build process
+- **Dynamic schemas**: When schema definitions need to be computed at runtime
+- **Apollo/graphql-tools compatibility**: Works with the modularized schema pattern from Apollo documentation
+
+### Error handling
+
+<Accordion title="Module not found">
+  **Error:** `Cannot find module './schema.js'`
+
+  **Cause:** The file path is incorrect or the file doesn't exist.
+
+  **Solution:** Verify the file path is correct and relative to your working directory.
+</Accordion>
+
+<Accordion title="Invalid export format">
+  **Error:** `Unexpected schema definition on "...", must be an array or function`
+
+  **Cause:** The JavaScript file doesn't export an array or function.
+
+  **Solution:** Ensure your file exports either:
+  - `export default [...]` (array)
+  - `export default () => [...]` (function returning array)
+</Accordion>
+
+## Choosing the right schema source
+
+Use this guide to choose the best schema source for your needs:
+
+<CardGroup cols={2}>
+  <Card title="HTTP Endpoint" icon="globe">
+    **Best for:**
+    - Live APIs
+    - Production documentation
+    - Automated documentation updates
+    - Always-up-to-date schemas
+
+    **Limitations:**
+    - Requires network access
+    - May need authentication
+    - API must be running
+  </Card>
+
+  <Card title="JSON File" icon="file-code">
+    **Best for:**
+    - Offline documentation
+    - CI/CD pipelines
+    - Cached schemas
+    - Legacy APIs
+
+    **Limitations:**
+    - Must be manually updated
+    - Can become outdated
+    - Verbose format
+  </Card>
+
+  <Card title="GraphQL IDL" icon="file-lines">
+    **Best for:**
+    - Schema-first development
+    - Version control
+    - Human-readable schemas
+    - Manual documentation
+
+    **Limitations:**
+    - Must be kept in sync with code
+    - Single-file only
+  </Card>
+
+  <Card title="JavaScript File" icon="file-code">
+    **Best for:**
+    - Modularized schemas
+    - graphql-tools projects
+    - Dynamic schemas
+    - Build processes
+
+    **Limitations:**
+    - Requires Node.js execution
+    - More complex setup
+  </Card>
+</CardGroup>
+
+## Common workflows
+
+### Development workflow
+
+<Steps>
+  <Step title="Use HTTP endpoint during development">
+    Point to your local development server:
+
+    ```bash
+    graphdoc --endpoint http://localhost:4000/graphql --output ./docs --force
+    ```
+  </Step>
+
+  <Step title="Add to package.json scripts">
+    ```json
+    "scripts": {
+      "docs": "graphdoc --endpoint http://localhost:4000/graphql --output ./docs --force"
+    }
+    ```
+  </Step>
+
+  <Step title="Run when schema changes">
+    ```bash
+    npm run docs
+    ```
+  </Step>
+</Steps>
+
+### Production workflow
+
+<Steps>
+  <Step title="Generate introspection JSON">
+    Save the production schema to a JSON file:
+
+    ```bash
+    # Using GraphQL CLI
+    graphql get-schema --endpoint https://api.example.com/graphql \
+      --header "Authorization: Bearer $PROD_TOKEN" \
+      --output schema.json
+    ```
+  </Step>
+
+  <Step title="Commit schema file">
+    ```bash
+    git add schema.json
+    git commit -m "Update schema snapshot"
+    ```
+  </Step>
+
+  <Step title="Generate docs from JSON">
+    ```bash
+    graphdoc --schema ./schema.json --output ./public/docs --force
+    ```
+  </Step>
+</Steps>
+
+### CI/CD workflow
+
+```yaml .github/workflows/docs.yml
+name: Generate Documentation
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      
+      - name: Install dependencies
+        run: npm install -g @2fd/graphdoc
+      
+      - name: Generate documentation
+        run: |
+          graphdoc \
+            --endpoint ${{ secrets.GRAPHQL_ENDPOINT }} \
+            --header "Authorization: Bearer ${{ secrets.API_TOKEN }}" \
+            --output ./docs \
+            --force
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+```
+
+## Troubleshooting
+
+<Accordion title="Schema validation errors">
+  If GraphDoc reports schema validation errors, ensure your schema is valid GraphQL. Use tools like:
+  - [GraphQL Playground](https://github.com/graphql/graphql-playground)
+  - [GraphiQL](https://github.com/graphql/graphiql)
+  - `graphql-js` validation functions
+</Accordion>
+
+<Accordion title="Introspection disabled">
+  Some production APIs disable introspection for security. In this case:
+  1. Generate the schema from your development environment
+  2. Save it to a JSON file
+  3. Use the JSON file as your schema source
+</Accordion>
+
+<Accordion title="Large schema files">
+  For very large schemas (thousands of types), consider:
+  - Using JSON files instead of endpoints to reduce network overhead
+  - Enabling `--verbose` to monitor progress
+  - Increasing Node.js memory limit: `node --max-old-space-size=4096 $(which graphdoc) ...`
+</Accordion>
+
+## Best practices
+
+<Tip>
+  **Version control your schema**: Whether using JSON or IDL files, commit them to version control to track schema changes over time.
+</Tip>
+
+<Tip>
+  **Automate documentation generation**: Set up CI/CD to regenerate documentation automatically when the schema changes.
+</Tip>
+
+<Tip>
+  **Use IDL files for schema-first development**: When designing your API, start with GraphQL IDL files and generate documentation before writing any code.
+</Tip>
+
+<Tip>
+  **Cache production schemas**: For production APIs, fetch the schema once and cache it as JSON to avoid repeated introspection queries during documentation builds.
+</Tip>

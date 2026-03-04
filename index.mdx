@@ -1,97 +1,279 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: GraphDoc Documentation
+mode: custom
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#0f1117] via-[#1a1d27] to-[#0f1117] dark:from-[#0f1117] dark:via-[#1a1d27] dark:to-[#0f1117] py-20 lg:py-24">
+  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40"></div>
+  
+  <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+          Document your GraphQL API with beautiful static pages
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mb-8">
+          GraphDoc generates clean, static HTML documentation from your GraphQL schema. Support for introspection queries, schema files, and custom plugins.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a 
+            href="/quickstart" 
+            className="inline-flex items-center px-6 py-3 rounded-lg bg-[#dfd0b5] hover:bg-[#cfc0a5] text-gray-900 font-semibold transition-colors no-underline"
+          >
+            Get Started
+            <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+          <a 
+            href="/usage/command-reference" 
+            className="inline-flex items-center px-6 py-3 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors no-underline"
+          >
+            View Commands
+          </a>
+        </div>
+        <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-gray-400">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-[#a4bb9a]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span>MIT Licensed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-[#a4bb9a]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span>1.5k+ GitHub Stars</span>
+          </div>
+        </div>
+      </div>
+      <div className="lg:col-span-5">
+        <div className="relative">
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#dfd0b5] to-[#a4bb9a] rounded-2xl blur opacity-20"></div>
+          <div className="relative bg-[#1a1d27] dark:bg-[#1a1d27] rounded-xl border border-[#27272a] dark:border-[#27272a] p-6 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <pre className="text-sm text-gray-300 overflow-x-auto"><code>{`$ graphdoc -e http://localhost:8080/graphql \\
+  -o ./docs
 
-Get your documentation site up and running in minutes.
+✓ Introspecting schema...
+✓ Generating documentation...
+✓ 127 pages created
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Documentation ready at ./docs/index.html`}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-## Make it yours
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Get started in three steps</h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">Generate beautiful documentation for your GraphQL API in minutes</p>
+  </div>
 
-Design a docs site that looks great and empowers your users.
+  <Steps>
+    <Step title="Install GraphDoc">
+      Install the CLI tool globally using npm:
+      
+      ```bash
+      npm install -g @2fd/graphdoc
+      ```
+      
+      Or use it directly with npx without installation:
+      
+      ```bash
+      npx @2fd/graphdoc --help
+      ```
+    </Step>
+    
+    <Step title="Generate documentation">
+      Point GraphDoc at your GraphQL endpoint or schema file:
+      
+      ```bash
+      graphdoc -e http://localhost:8080/graphql -o ./docs
+      ```
+      
+      Or use a local schema file:
+      
+      ```bash
+      graphdoc -s ./schema.graphql -o ./docs
+      ```
+      
+      <Accordion title="View example output">
+        GraphDoc will generate static HTML files with:
+        - Interactive navigation for all types, queries, mutations, and directives
+        - Detailed documentation for each GraphQL type
+        - Field-level descriptions and deprecation notices
+        - Cross-referenced type links
+      </Accordion>
+    </Step>
+    
+    <Step title="Deploy your documentation">
+      The generated documentation is a static site that you can deploy anywhere:
+      
+      ```bash
+      # Deploy to GitHub Pages
+      git add docs/
+      git commit -m "Add GraphQL documentation"
+      git push
+      
+      # Or serve locally
+      cd docs && python -m http.server 8000
+      ```
+      
+      View live examples: [GitHub API](https://2fd.github.io/graphdoc/github), [Star Wars](https://2fd.github.io/graphdoc/star-wars), [Shopify](https://2fd.github.io/graphdoc/shopify)
+    </Step>
+  </Steps>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Powerful features</h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">Everything you need to create comprehensive GraphQL documentation</p>
+  </div>
 
-## Create beautiful pages
+  <CardGroup cols={3}>
+    <Card title="Multiple schema sources" icon="database" href="/usage/schema-sources">
+      Support for HTTP endpoints, JSON files, GraphQL IDL, and JavaScript schema definitions
+    </Card>
+    <Card title="Plugin system" icon="puzzle-piece" href="/guides/plugin-development">
+      Extend GraphDoc with custom plugins to add navigation sections, inject content, or modify output
+    </Card>
+    <Card title="Custom templates" icon="palette" href="/guides/custom-templates">
+      Use Mustache templates to customize the look and feel of your documentation
+    </Card>
+    <Card title="Static output" icon="file-code" href="/quickstart">
+      Generated HTML is completely static with no runtime dependencies—perfect for hosting anywhere
+    </Card>
+    <Card title="Type navigation" icon="sitemap" href="/introduction">
+      Automatic navigation organized by types: scalars, enums, interfaces, unions, objects, and inputs
+    </Card>
+    <Card title="Configuration options" icon="sliders" href="/usage/configuration">
+      Configure via command-line flags or package.json for seamless integration into your workflow
+    </Card>
+  </CardGroup>
+</div>
 
-Everything you need to create world-class documentation.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Explore the documentation</h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">Learn how to use GraphDoc and customize it for your needs</p>
+  </div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <a href="/usage/command-reference" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#dfd0b5] dark:hover:border-[#dfd0b5] overflow-hidden transition-colors no-underline">
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <div className="flex items-start justify-between mb-3">
+          <div className="p-2 rounded-lg bg-gray-100 dark:bg-[#242838]">
+            <svg className="w-6 h-6 text-[#dfd0b5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Command reference</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Complete reference for all CLI commands, flags, and options</p>
+        <div className="flex items-center text-sm font-medium text-[#dfd0b5] group-hover:text-[#cfc0a5]">
+          View commands
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
 
-## Need inspiration?
+    <a href="/guides/plugin-development" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#dfd0b5] dark:hover:border-[#dfd0b5] overflow-hidden transition-colors no-underline">
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <div className="flex items-start justify-between mb-3">
+          <div className="p-2 rounded-lg bg-gray-100 dark:bg-[#242838]">
+            <svg className="w-6 h-6 text-[#a4bb9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+            </svg>
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Plugin development</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Learn how to build custom plugins to extend GraphDoc functionality</p>
+        <div className="flex items-center text-sm font-medium text-[#a4bb9a] group-hover:text-[#94ab8a]">
+          Build plugins
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    <a href="/guides/examples" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#dfd0b5] dark:hover:border-[#dfd0b5] overflow-hidden transition-colors no-underline">
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <div className="flex items-start justify-between mb-3">
+          <div className="p-2 rounded-lg bg-gray-100 dark:bg-[#242838]">
+            <svg className="w-6 h-6 text-[#4e5252]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Real-world examples</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Explore examples from GitHub, Shopify, and Pokemon GraphQL APIs</p>
+        <div className="flex items-center text-sm font-medium text-[#4e5252] group-hover:text-[#3e4242]">
+          View examples
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a href="/usage/configuration" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#dfd0b5] dark:hover:border-[#dfd0b5] overflow-hidden transition-colors no-underline">
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <div className="flex items-start justify-between mb-3">
+          <div className="p-2 rounded-lg bg-gray-100 dark:bg-[#242838]">
+            <svg className="w-6 h-6 text-[#dfd0b5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Configuration</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Learn how to configure GraphDoc via CLI flags or package.json</p>
+        <div className="flex items-center text-sm font-medium text-[#dfd0b5] group-hover:text-[#cfc0a5]">
+          Configure GraphDoc
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl bg-gradient-to-r from-[#1a1d27] to-[#242838] dark:from-[#1a1d27] dark:to-[#242838] border border-[#27272a] dark:border-[#27272a] p-8 sm:p-12 text-center">
+    <h2 className="text-3xl font-bold text-white mb-4">Ready to document your GraphQL API?</h2>
+    <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+      Get started with GraphDoc today and create beautiful, static documentation for your GraphQL schema.
+    </p>
+    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <a 
+        href="/quickstart" 
+        className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-[#dfd0b5] hover:bg-[#cfc0a5] text-gray-900 font-semibold transition-colors no-underline"
+      >
+        Get Started
+        <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a 
+        href="https://github.com/2fd/graphdoc" 
+        className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors no-underline"
+      >
+        <svg className="mr-2 w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+        </svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</div>

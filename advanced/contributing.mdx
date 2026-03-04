@@ -1,0 +1,646 @@
+---
+title: Contributing
+description: How to contribute to GraphDoc, development setup, testing, and pull requests
+---
+
+We welcome contributions to GraphDoc! This guide will help you set up your development environment and understand the contribution workflow.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Node.js 10 or higher
+- npm or yarn
+- Git
+- A GitHub account
+
+## Getting started
+
+<Steps>
+  <Step title="Fork the repository">
+    Fork the [GraphDoc repository](https://github.com/2fd/graphdoc) on GitHub.
+  </Step>
+  <Step title="Clone your fork">
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/graphdoc.git
+    cd graphdoc
+    ```
+  </Step>
+  <Step title="Add upstream remote">
+    ```bash
+    git remote add upstream https://github.com/2fd/graphdoc.git
+    ```
+  </Step>
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+</Steps>
+
+## Development setup
+
+### Project structure
+
+Understanding the codebase structure:
+
+```
+graphdoc/
+├── bin/                  # CLI entry point
+│   └── graphdoc.js
+├── lib/                  # Core library
+│   ├── command.ts        # Main command implementation
+│   ├── interface.d.ts    # TypeScript interfaces
+│   ├── schema-loader/    # Schema loading logic
+│   │   ├── http.ts       # HTTP endpoint loader
+│   │   ├── idl.ts        # GraphQL SDL loader
+│   │   ├── json.ts       # JSON introspection loader
+│   │   └── js.ts         # JavaScript modular schema loader
+│   └── utility/          # Utility functions
+│       ├── html.ts       # HTML generation utilities
+│       ├── output.ts     # CLI output formatting
+│       ├── template.ts   # Template helpers
+│       └── plugin.ts     # Plugin utilities
+├── plugins/              # Built-in plugins
+│   ├── default.ts        # Default plugin bundle
+│   ├── navigation.*.ts   # Navigation plugins for each type
+│   └── document.*.ts     # Document section plugins
+├── template/             # Default template (SLDS)
+│   └── slds/            # Salesforce Lightning Design System theme
+├── test/                 # Test files and fixtures
+│   ├── schema.ts         # Star Wars test schema
+│   ├── *.test.ts         # Jest test files
+│   └── *.json            # Schema fixtures (GitHub, Shopify)
+├── package.json
+└── tsconfig.json
+```
+
+### Building the project
+
+GraphDoc is written in TypeScript. Compile the source:
+
+```bash
+npm run compile
+```
+
+This runs `tsc -p .` and compiles TypeScript files to JavaScript in-place.
+
+<Info>
+  The project uses `tsconfig.json` with `compileOnSave: true` for automatic compilation in compatible IDEs.
+</Info>
+
+### Running GraphDoc locally
+
+After compiling, test your changes:
+
+```bash
+node bin/graphdoc.js -s ./test/starwars.graphql -o ./test-output -f
+```
+
+Or link the package globally:
+
+```bash
+npm link
+graphdoc -s ./test/starwars.graphql -o ./test-output -f
+```
+
+## Testing
+
+### Running tests
+
+GraphDoc uses Jest for testing:
+
+```bash
+npm test
+```
+
+This will run all tests matching `*.test.ts` or `*.spec.ts` patterns.
+
+### Test configuration
+
+From `package.json`:
+
+```json
+{
+  "jest": {
+    "preset": "ts-jest",
+    "testRegex": "\\.(test|spec)\\.ts$"
+  }
+}
+```
+
+### Writing tests
+
+Tests are located alongside the source files they test:
+
+```typescript
+// lib/utility/html.test.ts
+import { HTML } from './html';
+
+test('HTML.code generates code block', () => {
+  const html = new HTML();
+  expect(html.code('CODE')).toBe(
+    '<code class="highlight"><table class="code"><tbody>CODE</tbody></table></code>'
+  );
+});
+```
+
+### Test patterns
+
+<Accordion title="Unit tests">
+  Test individual functions and utilities:
+  ```typescript
+  test('utility/html.split', () => {
+    expect(split('', 0)).toEqual(['']);
+    expect(split(LOREM_IPSUM, 10)).toHaveLength(18);
+  });
+  ```
+</Accordion>
+
+<Accordion title="Plugin tests">
+  Test plugin behavior with schema fixtures:
+  ```typescript
+  import schema from '../test/github.json';
+  import NavigationSchema from './navigation.schema';
+
+  test('plugin returns navigation', () => {
+    const plugin = new NavigationSchema(
+      schema.data.__schema,
+      projectPackage,
+      {}
+    );
+    expect(plugin.getNavigations('Query')).toEqual([...]);
+  });
+  ```
+</Accordion>
+
+<Accordion title="Integration tests">
+  Test complete workflows with example schemas:
+  ```typescript
+  test('generates documentation from Star Wars schema', async () => {
+    // Test full documentation generation
+  });
+  ```
+</Accordion>
+
+### Test fixtures
+
+GraphDoc includes several test schemas:
+
+- `test/starwars.graphql` - Small GraphQL SDL schema
+- `test/github.json` - Full GitHub GraphQL API introspection
+- `test/shopify.json` - Shopify API introspection
+- `test/empty.schema.json` - Minimal test schema
+
+Use these for testing your changes.
+
+## Code style
+
+### TypeScript configuration
+
+The project uses strict TypeScript settings:
+
+```json
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "esModuleInterop": true
+  }
+}
+```
+
+### Linting
+
+GraphDoc uses TSLint (note: the project uses TSLint, not ESLint):
+
+```bash
+# Lint configuration in tslint.json
+# The project uses tslint-config-prettier
+```
+
+### Formatting
+
+Prettier is configured for code formatting:
+
+```bash
+# Format code
+npm run prettier
+```
+
+Settings are in `.prettierrc.json`.
+
+### Code conventions
+
+<Accordion title="Naming conventions">
+  - Use `camelCase` for variables and functions
+  - Use `PascalCase` for classes and interfaces
+  - Use `UPPER_CASE` for constants
+  - Prefix interfaces with `I`: `IFlags`, `IPartials`
+</Accordion>
+
+<Accordion title="File organization">
+  - One class or major function per file
+  - Test files alongside source: `html.ts` and `html.test.ts`
+  - Export types from `interface.d.ts`
+  - Group related functionality in directories
+</Accordion>
+
+<Accordion title="Error handling">
+  - Return rejected Promises for async errors
+  - Use descriptive error messages
+  - Include context in error messages (file paths, URLs, etc.)
+  
+  Example from lib/command.ts:206-214:
+  ```typescript
+  if (!stats.isDirectory()) {
+    return Promise.reject(
+      new Error('Unexpected output: ' + dir + ' is not a directory.')
+    );
+  }
+  ```
+</Accordion>
+
+## Making changes
+
+### Create a feature branch
+
+```bash
+git checkout -b feature/my-new-feature
+```
+
+or for bug fixes:
+
+```bash
+git checkout -b fix/issue-description
+```
+
+### Development workflow
+
+<Steps>
+  <Step title="Make your changes">
+    Edit source files in `lib/`, `plugins/`, or other directories.
+  </Step>
+  <Step title="Compile TypeScript">
+    ```bash
+    npm run compile
+    ```
+  </Step>
+  <Step title="Test your changes">
+    ```bash
+    npm test
+    ```
+  </Step>
+  <Step title="Test manually">
+    ```bash
+    node bin/graphdoc.js -s ./test/starwars.graphql -o ./test-output -f -v
+    ```
+  </Step>
+  <Step title="Verify output">
+    Open `./test-output/index.html` in a browser.
+  </Step>
+</Steps>
+
+### Example documentation generation
+
+Test with real-world schemas:
+
+```bash
+# Star Wars schema
+npm run doc.starwars
+
+# GitHub API schema
+npm run doc.github
+
+# Shopify API schema
+npm run doc.shopify
+
+# Pokemon GraphQL schema
+npm run doc.pokemon
+```
+
+These commands are defined in `package.json` and use configuration files like `example.github.json`.
+
+## Creating plugins
+
+If you're contributing a new plugin:
+
+### Plugin structure
+
+Plugins must implement the `PluginInterface` from lib/interface.d.ts:15-120:
+
+```typescript
+export interface PluginInterface {
+  getNavigations?: (buildForType?: string) => NavigationSectionInterface[];
+  getDocuments?: (buildForType?: string) => DocumentSectionInterface[];
+  getHeaders?: (buildForType?: string) => string[];
+  getAssets?: () => string[];
+}
+```
+
+### Plugin example
+
+```typescript
+import { PluginInterface, Schema } from '../lib/interface';
+
+export default class MyPlugin implements PluginInterface {
+  constructor(
+    private schema: Schema,
+    private projectPackage: any,
+    private graphdocPackage: any
+  ) {}
+
+  getNavigations(buildForType?: string) {
+    return [{
+      title: 'My Section',
+      items: [
+        {
+          text: 'My Page',
+          href: './my-page.html',
+          isActive: buildForType === 'MyType'
+        }
+      ]
+    }];
+  }
+}
+```
+
+### Testing plugins
+
+Create a test file alongside your plugin:
+
+```typescript
+import MyPlugin from './my-plugin';
+import schema from '../test/github.json';
+
+test('plugin generates navigation', () => {
+  const plugin = new MyPlugin(schema.data.__schema, {}, {});
+  const nav = plugin.getNavigations();
+  expect(nav).toHaveLength(1);
+});
+```
+
+## Submitting changes
+
+### Before submitting
+
+<Steps>
+  <Step title="Update tests">
+    Add tests for new features or bug fixes:
+    ```bash
+    npm test
+    ```
+  </Step>
+  <Step title="Compile and verify">
+    ```bash
+    npm run compile
+    npm test
+    ```
+  </Step>
+  <Step title="Check code style">
+    Ensure your code follows the project conventions.
+  </Step>
+  <Step title="Update documentation">
+    If you're adding features, update the README or create examples.
+  </Step>
+  <Step title="Test with example schemas">
+    ```bash
+    npm run doc.starwars
+    npm run doc.github
+    ```
+  </Step>
+</Steps>
+
+### Commit guidelines
+
+Write clear, descriptive commit messages:
+
+```bash
+git commit -m "Add support for custom template variables"
+```
+
+Good commit messages:
+- Use present tense: "Add feature" not "Added feature"
+- Be specific: "Fix HTTP loader timeout handling" not "Fix bug"
+- Reference issues: "Fix #123: Handle null schema types"
+
+### Creating a pull request
+
+<Steps>
+  <Step title="Push your branch">
+    ```bash
+    git push origin feature/my-new-feature
+    ```
+  </Step>
+  <Step title="Open a pull request">
+    Go to your fork on GitHub and click "New Pull Request".
+  </Step>
+  <Step title="Describe your changes">
+    Include:
+    - What the PR does
+    - Why the change is needed
+    - How to test it
+    - Screenshots (for UI changes)
+    - Related issues
+  </Step>
+  <Step title="Wait for review">
+    Maintainers will review your PR and may request changes.
+  </Step>
+</Steps>
+
+### Pull request template
+
+```markdown
+## Description
+Brief description of what this PR does.
+
+## Motivation
+Why is this change needed?
+
+## Changes
+- List of changes
+- Another change
+
+## Testing
+How to test these changes:
+1. Step one
+2. Step two
+
+## Screenshots (if applicable)
+
+## Related Issues
+Fixes #123
+```
+
+## Areas for contribution
+
+Here are some areas where contributions are especially welcome:
+
+### New features
+
+<Accordion title="Custom template support">
+  Improve template customization and create new themes beyond the default SLDS template.
+</Accordion>
+
+<Accordion title="Enhanced plugins">
+  Create plugins for:
+  - Code examples generation
+  - API usage statistics
+  - Schema diff visualization
+  - Custom documentation sections
+</Accordion>
+
+<Accordion title="Schema loaders">
+  Add support for:
+  - GraphQL servers with custom introspection
+  - Schema stitching scenarios
+  - Federation schemas
+</Accordion>
+
+### Bug fixes
+
+- Check [open issues](https://github.com/2fd/graphdoc/issues) for bugs
+- Look for issues labeled `good first issue` or `help wanted`
+- Fix edge cases in schema loading
+- Improve error messages
+
+### Documentation
+
+- Improve README examples
+- Add more inline code comments
+- Create tutorials for advanced usage
+- Document plugin API more thoroughly
+- Add JSDoc comments to exported functions
+
+### Testing
+
+- Increase test coverage
+- Add integration tests
+- Test with more real-world schemas
+- Add performance benchmarks
+
+### Performance
+
+- Optimize large schema handling
+- Reduce memory usage
+- Parallelize file generation
+- Cache introspection results
+
+## Development tips
+
+<Tip>
+  Use the `-v` verbose flag when testing to see detailed output including plugin loading, asset collection, and rendering progress.
+</Tip>
+
+<Tip>
+  Test your changes with the large GitHub schema (`test/github.json`) to ensure they work with complex, real-world schemas.
+</Tip>
+
+<Tip>
+  When debugging, add console.log statements and run with `node bin/graphdoc.js` directly rather than the global installation.
+</Tip>
+
+### Debugging plugins
+
+To debug plugin behavior:
+
+```typescript
+// In your plugin
+getNavigations(buildForType?: string) {
+  console.log('Building for type:', buildForType);
+  const result = [...]; // your logic
+  console.log('Navigation result:', JSON.stringify(result, null, 2));
+  return result;
+}
+```
+
+Run with verbose output:
+
+```bash
+node bin/graphdoc.js -s ./test/starwars.graphql -o ./test-output -f -v
+```
+
+### Working with templates
+
+To create or modify templates:
+
+1. Copy the default template:
+   ```bash
+   cp -r template/slds template/my-template
+   ```
+
+2. Edit `.mustache` files in `template/my-template/`
+
+3. Test your template:
+   ```bash
+   node bin/graphdoc.js -s ./test/starwars.graphql \
+     -o ./test-output \
+     -t ./template/my-template \
+     -f
+   ```
+
+4. Templates use [Mustache](https://mustache.github.io/) syntax
+
+## Community
+
+### Communication
+
+- GitHub Issues: Bug reports and feature requests
+- GitHub Discussions: Questions and general discussion
+- Pull Requests: Code contributions and reviews
+
+### Code of conduct
+
+Be respectful and constructive in all interactions. We want GraphDoc to be welcoming to contributors of all skill levels.
+
+### Recognition
+
+Contributors are recognized in the README. Significant contributions may result in being added as a maintainer.
+
+## Release process
+
+<Info>
+  Only maintainers can publish releases. This section is for reference.
+</Info>
+
+<Steps>
+  <Step title="Update version">
+    ```bash
+    npm version patch|minor|major
+    ```
+  </Step>
+  <Step title="Build and test">
+    ```bash
+    npm run compile
+    npm test
+    ```
+  </Step>
+  <Step title="Publish to npm">
+    ```bash
+    npm publish
+    ```
+  </Step>
+  <Step title="Create GitHub release">
+    Tag the release and add release notes on GitHub.
+  </Step>
+</Steps>
+
+## Getting help
+
+If you need help contributing:
+
+- Check existing issues and pull requests
+- Ask questions in GitHub Discussions
+- Review the source code and existing plugins
+- Look at the test files for examples
+
+<Info>
+  GraphDoc is maintained by [@2fd](https://github.com/2fd) and the community. Response times may vary.
+</Info>
+
+## Thank you
+
+Thank you for contributing to GraphDoc! Every contribution, whether it's code, documentation, bug reports, or suggestions, helps make GraphDoc better for everyone.

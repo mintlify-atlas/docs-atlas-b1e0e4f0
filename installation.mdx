@@ -1,0 +1,278 @@
+---
+title: Installation
+description: Learn how to install GraphDoc using npm, npx, or from source
+---
+
+GraphDoc can be installed globally via npm, run directly with npx, or built from source. Choose the installation method that best fits your workflow.
+
+## Prerequisites
+
+Before installing GraphDoc, ensure you have the following installed:
+
+- **Node.js**: Version 10 or higher recommended
+- **npm**: Comes bundled with Node.js
+
+<Tip>
+You can verify your Node.js and npm versions by running:
+```bash
+node --version
+npm --version
+```
+</Tip>
+
+## Install with npm (recommended)
+
+The easiest way to use GraphDoc is to install it globally via npm. This makes the `graphdoc` command available system-wide.
+
+```bash
+npm install -g @2fd/graphdoc
+```
+
+After installation, verify that GraphDoc is installed correctly:
+
+```bash
+graphdoc --version
+```
+
+You should see output like:
+
+```
+graphdoc v2.4.0
+```
+
+<Note>
+The package name is `@2fd/graphdoc`, but the command is just `graphdoc`.
+</Note>
+
+### Global vs local installation
+
+You can also install GraphDoc locally in your project:
+
+```bash
+npm install --save-dev @2fd/graphdoc
+```
+
+Then run it via npm scripts or npx:
+
+<CodeGroup>
+```json package.json
+{
+  "scripts": {
+    "docs": "graphdoc -e http://localhost:8080/graphql -o ./docs"
+  },
+  "devDependencies": {
+    "@2fd/graphdoc": "^2.4.0"
+  }
+}
+```
+
+```bash npm script
+npm run docs
+```
+
+```bash npx
+npx graphdoc -e http://localhost:8080/graphql -o ./docs
+```
+</CodeGroup>
+
+## Run with npx
+
+If you don't want to install GraphDoc permanently, you can run it directly with npx. This downloads and executes the package in a single command:
+
+```bash
+npx @2fd/graphdoc -e http://localhost:8080/graphql -o ./docs
+```
+
+This approach is useful for:
+
+- **One-time documentation generation**: When you don't need GraphDoc installed permanently
+- **CI/CD pipelines**: Ensures you always use the latest version without managing dependencies
+- **Quick testing**: Try GraphDoc without committing to an installation
+
+<Warning>
+Using npx will download the package each time unless it's cached. For repeated use, installing globally or locally is more efficient.
+</Warning>
+
+## Install from source
+
+For development or to use the latest unreleased features, you can install GraphDoc from the GitHub repository.
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/2fd/graphdoc.git
+    cd graphdoc
+    ```
+  </Step>
+  
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+  
+  <Step title="Compile TypeScript">
+    GraphDoc is written in TypeScript and must be compiled before use:
+    
+    ```bash
+    npm run compile
+    ```
+  </Step>
+  
+  <Step title="Link for global use (optional)">
+    To use your local build globally:
+    
+    ```bash
+    npm link
+    ```
+    
+    Now you can run `graphdoc` from anywhere on your system.
+  </Step>
+</Steps>
+
+### Running from source
+
+Without linking, you can run GraphDoc directly from the repository:
+
+```bash
+node bin/graphdoc.js -e http://localhost:8080/graphql -o ./docs
+```
+
+<Accordion title="Available npm scripts in the repository">
+  The GraphDoc repository includes several helpful npm scripts:
+  
+  - `npm run compile` - Compile TypeScript to JavaScript
+  - `npm run declaration` - Generate TypeScript declaration files
+  - `npm test` - Run the test suite with Jest
+  - `npm run doc.github` - Generate GitHub API documentation example
+  - `npm run doc.pokemon` - Generate Pokemon API documentation example
+  - `npm run doc.shopify` - Generate Shopify API documentation example
+</Accordion>
+
+## Verify installation
+
+Regardless of your installation method, verify that GraphDoc is working correctly:
+
+<CodeGroup>
+```bash Check version
+graphdoc --version
+```
+
+```bash Show help
+graphdoc --help
+```
+
+```bash Expected output
+Static page generator for documenting GraphQL Schema v2.4.0
+
+Usage: node bin/graphdoc.js [OPTIONS] 
+
+[OPTIONS]:
+-c, --config                   Configuration file [./package.json].
+-e, --endpoint                 Graphql http endpoint ["https://domain.com/graphql"].
+-x, --header                   HTTP header for request (use with --endpoint).
+-q, --query                    HTTP querystring for request (use with --endpoint).
+-s, --schema, --schema-file    Graphql Schema file ["./schema.json"].
+-p, --plugin                   Use plugins [default=graphdoc/plugins/default].
+-t, --template                 Use template [default=graphdoc/template/slds].
+-o, --output                   Output directory.
+-d, --data                     Inject custom data.
+-b, --base-url                 Base url for templates.
+-f, --force                    Delete outputDirectory if exists.
+-v, --verbose                  Output more information.
+-V, --version                  Show graphdoc version.
+-h, --help                     Print this help
+```
+</CodeGroup>
+
+## Update GraphDoc
+
+To update to the latest version of GraphDoc:
+
+<CodeGroup>
+```bash Global installation
+npm update -g @2fd/graphdoc
+```
+
+```bash Local installation
+npm update @2fd/graphdoc
+```
+
+```bash From source
+cd graphdoc
+git pull origin master
+npm install
+npm run compile
+```
+</CodeGroup>
+
+## Uninstall GraphDoc
+
+If you need to remove GraphDoc:
+
+<CodeGroup>
+```bash Global installation
+npm uninstall -g @2fd/graphdoc
+```
+
+```bash Local installation
+npm uninstall @2fd/graphdoc
+```
+
+```bash From source (if linked)
+npm unlink
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<Accordion title="Permission errors during global installation">
+  On Unix-based systems, you might encounter permission errors when installing globally. You have two options:
+  
+  **Option 1: Use npx instead** (recommended)
+  ```bash
+  npx @2fd/graphdoc -e http://localhost:8080/graphql -o ./docs
+  ```
+  
+  **Option 2: Fix npm permissions**
+  Follow [npm's official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) to resolve permission issues.
+</Accordion>
+
+<Accordion title="Command not found after installation">
+  If `graphdoc` command is not found after global installation:
+  
+  1. Verify the installation:
+     ```bash
+     npm list -g @2fd/graphdoc
+     ```
+  
+  2. Check your npm global bin path is in your PATH:
+     ```bash
+     npm config get prefix
+     ```
+  
+  3. Add npm's bin directory to your PATH if needed:
+     ```bash
+     export PATH="$(npm config get prefix)/bin:$PATH"
+     ```
+</Accordion>
+
+<Accordion title="TypeScript compilation errors when building from source">
+  Ensure you're using a compatible TypeScript version:
+  
+  ```bash
+  npm install
+  npm run compile
+  ```
+  
+  If errors persist, try cleaning and reinstalling:
+  ```bash
+  rm -rf node_modules package-lock.json
+  npm install
+  npm run compile
+  ```
+</Accordion>
+
+<Note>
+GraphDoc is an MIT-licensed open-source project. For issues, bug reports, or feature requests, visit the [GitHub repository](https://github.com/2fd/graphdoc).
+</Note>

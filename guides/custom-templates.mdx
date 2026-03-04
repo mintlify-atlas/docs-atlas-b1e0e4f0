@@ -1,0 +1,654 @@
+---
+title: Custom templates
+description: Learn how to customize Mustache templates to change the look and feel of your GraphDoc documentation
+---
+
+GraphDoc uses [Mustache](https://mustache.github.io/) templates to render HTML documentation. You can customize the appearance and structure by creating your own template or modifying the default SLDS template.
+
+## Template structure
+
+A GraphDoc template is a directory containing Mustache template files, CSS stylesheets, JavaScript files, and other assets. The default template is located at `template/slds/` in the source repository.
+
+### Required template files
+
+Every template must include these three Mustache files:
+
+<Steps>
+  <Step title="index.mustache">
+    The main HTML wrapper that includes the head, navigation, and body structure.
+
+    From `template/slds/index.mustache:1-51`:
+
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="x-ua-compatible" content="ie=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link type="text/css" rel="stylesheet" href="./styles/graphdoc.css" />
+        <title>{{title}}</title>
+        {{{headers}}}
+    </head>
+    <body class="slds-scrollable--y">
+        <nav class="slds-grid slds-grid--vertical slds-col--rule-right">
+            <header class="slds-p-around--medium slds-col slds-shrik slds-grow-none">
+                {{#projectPackage.graphdoc.logo}}
+                    {{{projectPackage.graphdoc.logo}}}
+                {{/projectPackage.graphdoc.logo}}
+                {{^projectPackage.graphdoc.logo}}
+                    <h3 class="slds-text-heading--medium">
+                        <a href="{{{projectPackage.graphdoc.baseUrl}}}">GraphQL Schema</a>
+                    </h3>
+                {{/projectPackage.graphdoc.logo}}
+                <div class="slds-p-top--small">
+                    <input id="type-search" type="text" placeholder="Search a type" 
+                           autofocus="" class="slds-input" />
+                </div>
+            </header>
+            <div id="navication-scroll" class="slds-scrollable--y slds-col slds-grow">
+                {{> nav}}
+            </div>
+        </nav>
+        <main>{{> main}}</main>
+        <script src="./scripts/focus-active.js"></script>
+        <script src="./scripts/filter-types.js"></script>
+        <script src="./scripts/toggle-navigation.js"></script>
+    </body>
+    </html>
+    ```
+
+    <Accordion title="Key sections in index.mustache">
+      - **`{{{headers}}}`**: Injected by plugins via `getHeaders()` method
+      - **`{{title}}`**: Page title from template data
+      - **`{{> nav}}`**: Includes the navigation partial
+      - **`{{> main}}`**: Includes the main content partial
+      - **`{{#projectPackage.graphdoc.logo}}`**: Conditional rendering based on config
+    </Accordion>
+  </Step>
+
+  <Step title="nav.mustache">
+    The navigation sidebar template that renders navigation sections and items.
+
+    From `template/slds/nav.mustache:1-15`:
+
+    ```html
+    {{#navigations}}
+    <div class="slds-grid slds-grid--vertical slds-navigation-list--vertical">
+        <h4 class="slds-text-title--caps slds-p-around--medium">{{title}}</h4>
+        <ul>
+            {{#items}}
+            <li {{#isActive}}class="slds-is-active"{{/isActive}} title="{{text}}">
+                <a href="{{{href}}}" 
+                   class="slds-navigation-list--vertical__action slds-text-link--reset slds-truncate">
+                    {{text}}
+                </a>
+            </li>
+            {{/items}}
+        </ul>
+    </div>
+    {{/navigations}}
+    ```
+
+    <Accordion title="Navigation data structure">
+      The `navigations` array contains `NavigationSectionInterface` objects:
+      ```typescript
+      navigations: [
+        {
+          title: "Schema",
+          items: [
+            { text: "Query", href: "./query.html", isActive: true },
+            { text: "Mutation", href: "./mutation.html", isActive: false }
+          ]
+        }
+      ]
+      ```
+    </Accordion>
+  </Step>
+
+  <Step title="main.mustache">
+    The main content area template that renders the page title, description, and document sections.
+
+    From `template/slds/main.mustache:1-59`:
+
+    ```html
+    <section class="title slds-theme--inverse">
+        <div class="container slds-grid">
+            <div>
+                <button class="slds-button js-toggle-navigation less-than-medium">
+                    <i class="material-icons slds-button__icon slds-button__icon--left">menu</i>
+                    <span class="slds-text-title--caps">Types<span>
+                </button>
+            </div>
+            {{#projectPackage.graphdoc.graphiql}}
+            <div class="slds-col--bump-left">
+                <a class="slds-button js-toggle-navigation" target="_blank" 
+                   href="{{projectPackage.graphdoc.graphiql}}">
+                    <span class="slds-text-title--caps">GraphiQL<span>
+                    <i class="material-icons slds-button__icon slds-button__icon--rigth">
+                        open_in_new
+                    </i>
+                </a>
+            </div>
+            {{/projectPackage.graphdoc.graphiql}}
+        </div>
+        <div class="container">
+            {{#type}}
+                <p class="slds-text-title--caps slds-text-color--weak">{{type.kind}}</p>
+            {{/type}}
+            <h1 class="slds-text-heading--large">{{title}}</h1>
+            <div class="slds-text-body--regular">{{{description}}}</div>
+        </div>
+    </section>
+    {{#documents}}
+    <section>
+        <div class="container">
+            <h2 id="{{#slug}}{{title}}{{/slug}}" 
+                class="graphdoc-section__title slds-text-heading--medium slds-m-top--small">
+                <a href="#{{#slug}}{{title}}{{/slug}}">
+                    <i class="material-icons">link</i>
+                </a>
+                {{title}}
+            </h2>
+            {{{description}}}
+        </div>
+    </section>
+    {{/documents}}
+    {{#graphdocPackage}}
+    <footer>
+        <div class="container slds-p-around--large">
+            <p class="slds-text-align--right slds-text-title--caps">
+                Generated with <a href="{{{graphdocPackage.homepage}}}" target="_blank">
+                    graphdoc {{graphdocPackage.version}}
+                </a>
+            </p>
+        </div>
+    </footer>
+    {{/graphdocPackage}}
+    ```
+
+    <Accordion title="Document sections data structure">
+      The `documents` array contains `DocumentSectionInterface` objects:
+      ```typescript
+      documents: [
+        {
+          title: "GraphQL Schema definition",
+          description: "<code class='highlight'>...</code>"
+        },
+        {
+          title: "Required by",
+          description: "<ul>...</ul>"
+        }
+      ]
+      ```
+    </Accordion>
+  </Step>
+</Steps>
+
+## Template data context
+
+Templates receive data via the `ITemplateData` interface (from `lib/utility/template.ts:15-25`):
+
+```typescript
+export interface ITemplateData {
+  title: string;
+  type?: TypeRef;
+  description: string;
+  headers: string;
+  navigations: NavigationSectionInterface[];
+  documents: DocumentSectionInterface[];
+  projectPackage: any;
+  graphdocPackage: any;
+  slug: typeof slugTemplate;
+}
+```
+
+### Available template variables
+
+<CardGroup cols={2}>
+  <Card title="title" icon="heading">
+    Page title - type name or project name for index
+  </Card>
+  <Card title="type" icon="shapes">
+    Current type being rendered (undefined on index page)
+  </Card>
+  <Card title="description" icon="file-lines">
+    Markdown-rendered description (from type or package.json)
+  </Card>
+  <Card title="headers" icon="code">
+    HTML string of all headers from plugins
+  </Card>
+  <Card title="navigations" icon="bars">
+    Array of navigation sections for the sidebar
+  </Card>
+  <Card title="documents" icon="file">
+    Array of document sections for main content
+  </Card>
+  <Card title="projectPackage" icon="box">
+    Your project's package.json contents
+  </Card>
+  <Card title="graphdocPackage" icon="book">
+    GraphDoc's package.json contents
+  </Card>
+</CardGroup>
+
+### The slug helper
+
+The `slug` function converts text to URL-safe anchors:
+
+```html
+<h2 id="{{#slug}}{{title}}{{/slug}}">
+    <a href="#{{#slug}}{{title}}{{/slug}}">
+        {{title}}
+    </a>
+</h2>
+```
+
+For a title like "GraphQL Schema definition", this generates:
+```html
+<h2 id="graphql-schema-definition">
+    <a href="#graphql-schema-definition">
+        GraphQL Schema definition
+    </a>
+</h2>
+```
+
+## Accessing configuration in templates
+
+You can add custom fields to your `package.json` and access them in templates:
+
+```json
+{
+  "name": "my-api",
+  "graphdoc": {
+    "endpoint": "http://localhost:8080/graphql",
+    "output": "./docs",
+    "logo": "<img src='./logo.png' alt='My API' />",
+    "graphiql": "http://localhost:8080/graphiql",
+    "ga": "UA-XXXXX-Y",
+    "customField": "Custom value"
+  }
+}
+```
+
+### Common configuration fields
+
+<Tabs>
+  <Tab title="logo">
+    Custom logo HTML displayed in the navigation header:
+
+    ```html
+    {{#projectPackage.graphdoc.logo}}
+        {{{projectPackage.graphdoc.logo}}}
+    {{/projectPackage.graphdoc.logo}}
+    {{^projectPackage.graphdoc.logo}}
+        <h3><a href="{{{projectPackage.graphdoc.baseUrl}}}">GraphQL Schema</a></h3>
+    {{/projectPackage.graphdoc.logo}}
+    ```
+  </Tab>
+
+  <Tab title="graphiql">
+    Link to your GraphiQL endpoint:
+
+    ```html
+    {{#projectPackage.graphdoc.graphiql}}
+    <a href="{{projectPackage.graphdoc.graphiql}}" target="_blank">
+        Open GraphiQL
+    </a>
+    {{/projectPackage.graphdoc.graphiql}}
+    ```
+  </Tab>
+
+  <Tab title="ga">
+    Google Analytics tracking ID:
+
+    ```html
+    {{#projectPackage.graphdoc.ga}}
+    <script>
+        ga('create', '{{projectPackage.graphdoc.ga}}', 'auto');
+        ga('send', 'pageview');
+    </script>
+    {{/projectPackage.graphdoc.ga}}
+    ```
+  </Tab>
+
+  <Tab title="baseUrl">
+    Base URL for all links (useful for subdirectory deployments):
+
+    ```html
+    <a href="{{{projectPackage.graphdoc.baseUrl}}}index.html">Home</a>
+    ```
+  </Tab>
+</Tabs>
+
+## Creating a custom template
+
+<Steps>
+  <Step title="Create template directory">
+    Create a new directory with the required Mustache files:
+
+    ```bash
+    mkdir -p my-template
+    cd my-template
+    touch index.mustache nav.mustache main.mustache
+    ```
+  </Step>
+
+  <Step title="Copy base styles">
+    Start with the default SLDS template as a reference or create your own styles:
+
+    ```bash
+    mkdir -p styles scripts
+    ```
+
+    Add your custom CSS and JavaScript files to these directories.
+  </Step>
+
+  <Step title="Design index.mustache">
+    Create the main HTML structure:
+
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="./styles/custom.css" />
+        <title>{{title}}</title>
+        {{{headers}}}
+    </head>
+    <body>
+        <aside class="sidebar">
+            <header>
+                <h1>{{projectPackage.name}}</h1>
+                <input type="search" id="search" placeholder="Search types..." />
+            </header>
+            {{> nav}}
+        </aside>
+        <main class="content">
+            {{> main}}
+        </main>
+        <script src="./scripts/search.js"></script>
+    </body>
+    </html>
+    ```
+  </Step>
+
+  <Step title="Design nav.mustache">
+    Structure your navigation sidebar:
+
+    ```html
+    <nav>
+        {{#navigations}}
+        <section class="nav-section">
+            <h2>{{title}}</h2>
+            <ul>
+                {{#items}}
+                <li class="{{#isActive}}active{{/isActive}}">
+                    <a href="{{{href}}}">{{text}}</a>
+                </li>
+                {{/items}}
+            </ul>
+        </section>
+        {{/navigations}}
+    </nav>
+    ```
+  </Step>
+
+  <Step title="Design main.mustache">
+    Layout your content area:
+
+    ```html
+    <article>
+        <header>
+            {{#type}}<span class="type-kind">{{type.kind}}</span>{{/type}}
+            <h1>{{title}}</h1>
+            {{{description}}}
+        </header>
+        
+        {{#documents}}
+        <section id="{{#slug}}{{title}}{{/slug}}">
+            <h2>{{title}}</h2>
+            {{{description}}}
+        </section>
+        {{/documents}}
+    </article>
+    ```
+  </Step>
+
+  <Step title="Use your template">
+    Reference your custom template when generating documentation:
+
+    <Tabs>
+      <Tab title="Command line">
+        ```bash
+        graphdoc -s ./schema.json \
+          -o ./docs \
+          -t ./my-template
+        ```
+      </Tab>
+      <Tab title="package.json">
+        ```json
+        {
+          "graphdoc": {
+            "schemaFile": "./schema.json",
+            "output": "./docs",
+            "template": "./my-template"
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+<Note>
+  All files in your template directory (CSS, JS, images, fonts) are automatically copied to the output directory, preserving the folder structure.
+</Note>
+
+## Mustache syntax reference
+
+### Conditional rendering
+
+```html
+{{#variable}}
+    Content shown if variable is truthy
+{{/variable}}
+
+{{^variable}}
+    Content shown if variable is falsy
+{{/variable}}
+```
+
+### Iterating arrays
+
+```html
+{{#items}}
+    <li>{{name}}</li>
+{{/items}}
+```
+
+### Escaped vs unescaped output
+
+```html
+{{variable}}       <!-- HTML-escaped -->
+{{{variable}}}     <!-- Raw HTML -->
+```
+
+<Warning>
+  Use triple braces `{{{variable}}}` for HTML content like `headers`, `description`, and `href` attributes. Use double braces `{{variable}}` for plain text to prevent XSS attacks.
+</Warning>
+
+### Partials
+
+```html
+{{> partialName}}
+```
+
+Mustache automatically finds files named `partialName.mustache` in the same directory.
+
+## Styling generated content
+
+Plugins generate HTML content that you need to style. The default template includes these classes:
+
+### Code highlighting
+
+From `plugins/document.schema/index.ts`, the `HTML` class generates:
+
+```html
+<code class="highlight">
+    <table class="code">
+        <tbody>
+            <tr class="row">
+                <td id="L1" class="td-index">1</td>
+                <td id="LC1" class="td-code">
+                    <span class="keyword operator ts">type</span>
+                    <span class="identifier">Query</span> {
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</code>
+```
+
+Style these elements:
+
+```css
+.highlight { background: #f5f5f5; }
+.code { width: 100%; }
+.td-index { color: #999; width: 40px; text-align: right; }
+.td-code { padding-left: 10px; }
+.keyword { color: #d73a49; font-weight: bold; }
+.identifier { color: #6f42c1; }
+.comment { color: #6a737d; font-style: italic; }
+.property, .meta { color: #005cc5; }
+.support.type { color: #22863a; }
+```
+
+### Navigation states
+
+```css
+.slds-is-active a {
+    background-color: #0070d2;
+    color: white;
+}
+```
+
+## Advanced customization
+
+### Dynamic content with JavaScript
+
+The default template includes search functionality. From `template/slds/scripts/filter-types.js`:
+
+```javascript
+document.getElementById('type-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const items = document.querySelectorAll('nav li');
+    
+    items.forEach(function(item) {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+```
+
+### Responsive design
+
+The SLDS template includes mobile navigation:
+
+```css
+@media (max-width: 768px) {
+    nav {
+        position: fixed;
+        transform: translateX(-100%);
+        transition: transform 0.3s;
+    }
+    
+    nav.open {
+        transform: translateX(0);
+    }
+}
+```
+
+### Custom fonts and icons
+
+The default template uses Material Icons:
+
+```html
+<head>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<i class="material-icons">link</i>
+<i class="material-icons">menu</i>
+<i class="material-icons">close</i>
+```
+
+## Template examples from real schemas
+
+Let's look at how different schemas customize their documentation:
+
+### GitHub API
+
+From `example.github.json:19`:
+
+```json
+{
+  "graphdoc": {
+    "logo": "<a href='https://developer.github.com' target='_blank' style='display:block;padding:1rem 3rem'><img src='https://assets-cdn.github.com/images/modules/logos_page/GitHub-Logo.png' /></a>",
+    "graphiql": "https://developer.github.com/early-access/graphql/explorer/",
+    "ga": "UA-54154153-2"
+  }
+}
+```
+
+This adds the GitHub logo and links to their GraphiQL explorer.
+
+### Shopify API
+
+From `example.shopify.json:6-7`:
+
+```json
+{
+  "graphdoc": {
+    "logo": "<a href='/shopify' target='_blank' style='display:block;padding:1rem 15%'><img src='https://upload.wikimedia.org/wikipedia/commons/e/e1/Shopify_Logo.png' /></a>",
+    "graphiql": "https://help.shopify.com/api/storefront-api/graphql-explorer/graphiql"
+  }
+}
+```
+
+### Pokemon GraphQL
+
+From `example.pokemon.json:17`:
+
+```json
+{
+  "graphdoc": {
+    "logo": "<a href='https://github.com/lucasbento/graphql-pokemon' target='_blank' style='display:block;padding:1rem 35%'><img src='https://raw.githubusercontent.com/lucasbento/graphql-pokemon/master/content/logo.png' /></a>",
+    "graphiql": "https://graphql-pokemon.now.sh/",
+    "endpoint": "https://graphql-pokemon.now.sh/"
+  }
+}
+```
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Keep it semantic" icon="code">
+    Use proper HTML5 semantic elements (`<nav>`, `<article>`, `<section>`, `<aside>`) for better accessibility.
+  </Card>
+  <Card title="Test responsiveness" icon="mobile">
+    Ensure your template works well on mobile devices with appropriate breakpoints and navigation patterns.
+  </Card>
+  <Card title="Preserve functionality" icon="gears">
+    If modifying the default template, keep the search and navigation toggle scripts functional.
+  </Card>
+  <Card title="Use relative paths" icon="link">
+    Always use relative paths (`./styles/`, `./scripts/`) so documentation can be deployed to any subdirectory.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Start by copying the default SLDS template and making incremental changes. This ensures you don't miss any required template variables or structure.
+</Tip>

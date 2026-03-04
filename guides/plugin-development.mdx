@@ -1,0 +1,581 @@
+---
+title: Plugin development
+description: Learn how to create custom plugins to extend GraphDoc's functionality and control the content displayed on documentation pages
+---
+
+Plugins in GraphDoc control the content displayed on every page of your generated documentation. A plugin is an object that implements the `PluginInterface`, allowing you to customize navigation sections, document sections, headers, and assets.
+
+## Understanding the PluginInterface
+
+The `PluginInterface` (defined in `lib/interface.d.ts:15-120`) specifies four optional methods that you can implement:
+
+```typescript
+export interface PluginInterface {
+  getNavigations?: (
+    buildForType?: string
+  ) => NavigationSectionInterface[] | PromiseLike<NavigationSectionInterface[]>;
+
+  getDocuments?: (
+    buildForType?: string
+  ) => DocumentSectionInterface[] | PromiseLike<DocumentSectionInterface[]>;
+
+  getHeaders?: (buildForType?: string) => string[] | PromiseLike<string[]>;
+
+  getAssets?: () => string[] | PromiseLike<string[]>;
+}
+```
+
+### NavigationSectionInterface
+
+Navigation sections appear in the sidebar of your documentation:
+
+```typescript
+export interface NavigationSectionInterface {
+  title: string;
+  items: NavigationItemInterface[];
+}
+
+export interface NavigationItemInterface {
+  href: string;
+  text: string;
+  isActive: boolean;
+}
+```
+
+### DocumentSectionInterface
+
+Document sections are rendered in the main content area:
+
+```typescript
+export interface DocumentSectionInterface {
+  title: string;
+  description: string;
+}
+```
+
+## Creating your first plugin
+
+You can create a plugin as either a plain object or a constructor function. If you use a constructor, it receives three parameters:
+
+<Steps>
+  <Step title="Create the plugin class">
+    Extend the `Plugin` base class and implement `PluginInterface`:
+
+    ```typescript
+    import { PluginInterface, NavigationSectionInterface } from "graphdoc/lib/interface";
+    import { Plugin, NavigationSection, NavigationItem } from "graphdoc/lib/utility";
+
+    export default class MyCustomPlugin extends Plugin implements PluginInterface {
+      constructor(document, projectPackage, graphdocPackage) {
+        super(document, projectPackage, graphdocPackage);
+      }
+    }
+    ```
+
+    The constructor parameters are:
+    - `document`: The full result of the GraphQL introspection query (type: `Schema`)
+    - `projectPackage`: Content of your project's `package.json` (or config file)
+    - `graphdocPackage`: Content of GraphDoc's `package.json`
+  </Step>
+
+  <Step title="Implement plugin methods">
+    Add one or more of the four plugin methods based on what you want to customize:
+
+    ```typescript
+    getNavigations(buildForType?: string): NavigationSectionInterface[] {
+      return [
+        new NavigationSection("Custom Section", [
+          new NavigationItem("Example", "./example.html", false)
+        ])
+      ];
+    }
+
+    getDocuments(buildForType?: string): DocumentSectionInterface[] {
+      return [
+        new DocumentSection("Custom Title", "<p>HTML content here</p>")
+      ];
+    }
+
+    getHeaders(buildForType?: string): string[] {
+      return ['<link href="./assets/custom.css" rel="stylesheet">'];
+    }
+
+    getAssets(): string[] {
+      return [resolve(__dirname, "assets/custom.css")];
+    }
+    ```
+  </Step>
+
+  <Step title="Use the plugin">
+    Reference your plugin via command line or `package.json`:
+
+    <Tabs>
+      <Tab title="Command line">
+        ```bash
+        graphdoc -p ./lib/plugins/my-custom-plugin \
+          -s ./schema.json \
+          -o ./doc/schema
+        ```
+      </Tab>
+      <Tab title="package.json">
+        ```json
+        {
+          "graphdoc": {
+            "endpoint": "http://localhost:8080/graphql",
+            "output": "./doc/schema",
+            "plugins": [
+              "graphdoc/plugins/default",
+              "./lib/plugins/my-custom-plugin"
+            ]
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+<Warning>
+  For performance reasons, all plugins receive references to the same objects. Do not modify `document`, `projectPackage`, or `graphdocPackage` directly unless you intend to affect other plugins.
+</Warning>
+
+## Real plugin examples
+
+Let's examine actual plugins from the GraphDoc source code to understand different patterns.
+
+### Navigation plugin example
+
+The `NavigationEnum` plugin (from `plugins/navigation.enum.ts:9-32`) shows how to add enum types to the sidebar:
+
+```typescript
+export default class NavigationEnums extends Plugin implements PluginInterface {
+  getTypes(buildForType: string): NavigationItemInterface[] {
+    return this.document.types
+      .filter(type => type.kind === ENUM)
+      .map(
+        type =>
+          new NavigationItem(
+            type.name,
+            this.url(type),
+            type.name === buildForType
+          )
+      );
+  }
+
+  getNavigations(buildForType: string) {
+    const types: NavigationItemInterface[] = this.getTypes(buildForType);
+
+    if (types.length === 0) {
+      return [];
+    }
+
+    return [new NavigationSection("Enums", types)];
+  }
+}
+```
+
+<Accordion title="Key concepts from this example">
+  - **Filter schema types**: Use `this.document.types.filter()` to find specific kinds
+  - **Generate URLs**: Use `this.url(type)` from the base `Plugin` class to create proper links
+  - **Mark active items**: Compare `type.name === buildForType` to highlight the current page
+  - **Return empty arrays**: When no items exist, return `[]` to avoid rendering empty sections
+</Accordion>
+
+### Document content plugin example
+
+The `DocumentSchema` plugin (from `plugins/document.schema/index.ts:28-99`) generates GraphQL schema definitions as HTML:
+
+```typescript
+export default class SchemaPlugin extends Plugin implements PluginInterface {
+  private html: HTML;
+
+  getHeaders(): string[] {
+    return [
+      '<link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700" rel="stylesheet">',
+      '<link type="text/css" rel="stylesheet" href="./assets/code.css" />',
+      '<script src="./assets/line-link.js"></script>'
+    ];
+  }
+
+  getAssets() {
+    return [
+      resolve(__dirname, "assets/code.css"),
+      resolve(__dirname, "assets/line-link.js")
+    ];
+  }
+
+  getDocuments(buildForType?: string): DocumentSectionInterface[] {
+    this.html = new HTML();
+    const code = this.code(buildForType);
+
+    if (code) {
+      return [
+        new DocumentSection("GraphQL Schema definition", this.html.code(code))
+      ];
+    }
+
+    return [];
+  }
+
+  code(buildForType?: string): string {
+    if (!buildForType) {
+      return this.schema(this.document);
+    }
+
+    const type = this.document.types.find(
+      eachType => eachType.name === buildForType
+    );
+
+    if (type) {
+      switch (type.kind) {
+        case SCALAR:
+          return this.scalar(type);
+        case OBJECT:
+          return this.object(type);
+        case INTERFACE:
+          return this.interfaces(type);
+        // ... more cases
+      }
+    }
+
+    throw new TypeError("Unexpected type: " + buildForType);
+  }
+}
+```
+
+<Accordion title="Key concepts from this example">
+  - **Coordinate headers and assets**: Use `getHeaders()` to reference assets that `getAssets()` copies
+  - **Use helper classes**: The `HTML` class (from `lib/utility/html.ts:4-88`) provides methods for generating syntax-highlighted code
+  - **Handle different contexts**: Check if `buildForType` is provided to determine if rendering the index or a specific type page
+  - **Generate rich content**: Return HTML strings in the `description` field of `DocumentSection`
+</Accordion>
+
+### Dependency tracking plugin example
+
+The `RequireByPlugin` (from `plugins/document.require-by/index.ts:20-158`) tracks which types depend on each other:
+
+```typescript
+export default class RequireByPlugin extends Plugin implements PluginInterface {
+  requireBy: Map<string, SchemaType[]>;
+
+  constructor(
+    public document: Schema,
+    public projectPackage: any,
+    public graphdocPackage: any
+  ) {
+    super(document, projectPackage, graphdocPackage);
+
+    this.requireBy = new Map();
+
+    if (Array.isArray(document.types)) {
+      document.types.forEach((type: SchemaType) => {
+        this.getDependencies(type).forEach((curr: string) => {
+          const deps = this.requireBy.get(curr) || [];
+          deps.push(type);
+          this.requireBy.set(curr, deps);
+        });
+      });
+    }
+  }
+
+  getDependencies(type: SchemaType): string[] {
+    const deps: string[] = [];
+
+    if (Array.isArray(type.fields) && type.fields.length > 0) {
+      type.fields.forEach(field => {
+        deps.push(getTypeOf(field.type).name);
+
+        if (Array.isArray(field.args) && field.args.length > 0) {
+          field.args.forEach(arg => {
+            deps.push(getTypeOf(arg.type).name);
+          });
+        }
+      });
+    }
+
+    return deps;
+  }
+
+  getDocuments(buildForType?: string): DocumentSectionInterface[] {
+    if (!buildForType) {
+      return [];
+    }
+
+    const requireBy = this.requireBy.get(buildForType);
+
+    if (!Array.isArray(requireBy) || requireBy.length === 0) {
+      return [
+        {
+          title: "Required by",
+          description:
+            '<div class="require-by anyone">' +
+            "This element is not required by anyone" +
+            "</div>"
+        }
+      ];
+    }
+
+    const used = new Set();
+
+    return [
+      {
+        title: "Required by",
+        description:
+          '<ul class="require-by">' +
+          requireBy
+            .filter(t => {
+              return used.has(t.name) ? false : used.add(t.name);
+            })
+            .map(t => this.getDescription(t))
+            .join("") +
+          "</ul>"
+      }
+    ];
+  }
+}
+```
+
+<Accordion title="Key concepts from this example">
+  - **Pre-compute in constructor**: Build lookup maps during initialization for better performance
+  - **Use utility functions**: The `getTypeOf()` helper (from `lib/utility/introspection.ts`) unwraps nested types like `[Type!]!`
+  - **Context-specific rendering**: Only show "Required by" sections on type pages, not the index
+  - **Deduplicate results**: Use a `Set` to avoid showing duplicate dependencies
+</Accordion>
+
+## Composing multiple plugins
+
+The default plugin (from `plugins/default.ts:19-54`) demonstrates how to combine multiple plugins:
+
+```typescript
+export default class NavigationDirectives extends Plugin
+  implements PluginInterface {
+  plugins: PluginInterface[];
+
+  constructor(document: Schema, graphdocPackage: any, projectPackage: any) {
+    super(document, graphdocPackage, projectPackage);
+    this.plugins = [
+      new NavigationSchema(document, graphdocPackage, projectPackage),
+      new NavigationScalar(document, graphdocPackage, projectPackage),
+      new NavigationEnum(document, graphdocPackage, projectPackage),
+      new NavigationInterfaces(document, graphdocPackage, projectPackage),
+      new NavigationUnion(document, graphdocPackage, projectPackage),
+      new NavigationObject(document, graphdocPackage, projectPackage),
+      new NavigationInput(document, graphdocPackage, projectPackage),
+      new NavigationDirective(document, graphdocPackage, projectPackage),
+      new DocumentSchema(document, graphdocPackage, projectPackage),
+      new RequireByPlugin(document, graphdocPackage, projectPackage)
+    ];
+  }
+
+  getNavigations(buildForType?: string): Promise<NavigationSectionInterface[]> {
+    return Plugin.collectNavigations(this.plugins, buildForType);
+  }
+
+  getDocuments(buildForType?: string): Promise<DocumentSectionInterface[]> {
+    return Plugin.collectDocuments(this.plugins, buildForType);
+  }
+
+  getHeaders(buildForType?: string): Promise<string[]> {
+    return Plugin.collectHeaders(this.plugins, buildForType);
+  }
+
+  getAssets(): Promise<string[]> {
+    return Plugin.collectAssets(this.plugins);
+  }
+}
+```
+
+The base `Plugin` class provides static collection methods (from `lib/utility/plugin.ts:32-86`) that gather results from all plugins:
+
+```typescript
+static async collectNavigations(
+  plugins: PluginInterface[],
+  buildForType?: string
+): Promise<NavigationSectionInterface[]> {
+  const navigationCollection = await Promise.all<NavigationSectionInterface[]>(
+    plugins.map(plugin => {
+      return plugin.getNavigations
+        ? plugin.getNavigations(buildForType)
+        : (null as any);
+    })
+  );
+
+  return Plugin.collect(navigationCollection);
+}
+```
+
+## Using the Plugin base class
+
+The `Plugin` base class (from `lib/utility/plugin.ts:19-148`) provides helpful properties and methods:
+
+### Available properties
+
+```typescript
+class Plugin {
+  queryType: SchemaType | null = null;
+  mutationType: SchemaType | null = null;
+  subscriptionType: SchemaType | null = null;
+  typeMap: { [name: string]: SchemaType } = {};
+  directiveMap: { [name: string]: Directive } = {};
+  document: Schema;
+  projectPackage: any;
+  graphdocPackage: any;
+}
+```
+
+<Tip>
+  The `typeMap` and `directiveMap` are automatically populated in the constructor, allowing quick lookups by name.
+</Tip>
+
+### The url() method
+
+Generate proper URLs for types using the `url()` method:
+
+```typescript
+url(type: DeepTypeRef | TypeRef | Description): string {
+  return url.resolve(
+    this.projectPackage.graphdoc.baseUrl,
+    getFilenameOf(type)
+  );
+}
+```
+
+### Helper classes
+
+GraphDoc provides utility classes for constructing plugin results:
+
+```typescript
+import {
+  NavigationSection,
+  NavigationItem,
+  DocumentSection
+} from "graphdoc/lib/utility";
+
+// Create navigation items
+const navSection = new NavigationSection("My Section", [
+  new NavigationItem("Label", "./page.html", false)
+]);
+
+// Create document sections
+const docSection = new DocumentSection("Title", "<p>HTML content</p>");
+```
+
+## Advanced techniques
+
+### Async operations
+
+All plugin methods can return Promises:
+
+```typescript
+async getDocuments(buildForType?: string): Promise<DocumentSectionInterface[]> {
+  const data = await fetchExternalData();
+  return [
+    new DocumentSection("External Data", formatData(data))
+  ];
+}
+```
+
+### Accessing configuration
+
+Use `this.projectPackage.graphdoc` to access custom configuration:
+
+```json
+{
+  "graphdoc": {
+    "endpoint": "http://localhost:8080/graphql",
+    "output": "./docs",
+    "myCustomConfig": {
+      "option1": "value1"
+    }
+  }
+}
+```
+
+```typescript
+getDocuments(buildForType?: string): DocumentSectionInterface[] {
+  const config = this.projectPackage.graphdoc.myCustomConfig;
+  // Use config.option1
+}
+```
+
+### Generating HTML
+
+Use the `HTML` class for syntax-highlighted code:
+
+```typescript
+import { HTML } from "graphdoc/lib/utility";
+
+const html = new HTML();
+const code = html.line(
+  html.keyword("type") + " " + html.identifier(type) + " {"
+) + html.line("}");
+
+const wrapped = html.code(code);
+```
+
+## Plugin export formats
+
+GraphDoc supports multiple export formats:
+
+<CodeGroup>
+
+```typescript ES2015 class export
+export default class MyPlugin {
+  constructor(schema, projectPackage, graphdocPackage) {}
+
+  getAssets() {
+    return [];
+  }
+}
+```
+
+```typescript ES2015 object export
+export default {
+  getAssets() {
+    return [];
+  }
+};
+```
+
+```javascript CommonJS constructor
+function MyPlugin(schema, projectPackage, graphdocPackage) {
+  // initialization
+}
+
+MyPlugin.prototype.getAssets = function() {
+  return [];
+};
+
+exports.default = MyPlugin;
+```
+
+```javascript CommonJS object
+exports.default = {
+  getAssets: function() {
+    return [];
+  }
+};
+```
+
+</CodeGroup>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Return empty arrays" icon="list">
+    When no content is available, return `[]` instead of `null` to avoid rendering empty sections.
+  </Card>
+  <Card title="Leverage base class" icon="layer-group">
+    Extend the `Plugin` base class to access pre-populated type maps and helper methods.
+  </Card>
+  <Card title="Check buildForType" icon="filter">
+    Use the `buildForType` parameter to render different content for the index vs. type pages.
+  </Card>
+  <Card title="Coordinate assets" icon="link">
+    Ensure paths in `getHeaders()` match filenames returned by `getAssets()`.
+  </Card>
+</CardGroup>
+
+<Note>
+  Assets are copied to the `assets/` directory in the output folder. Reference them as `./assets/filename.ext` in your headers.
+</Note>

@@ -1,0 +1,326 @@
+---
+title: Command reference
+description: Complete reference for all GraphDoc CLI commands, flags, and options
+---
+
+GraphDoc provides a comprehensive command-line interface for generating static HTML documentation from GraphQL schemas.
+
+## Basic usage
+
+```bash
+graphdoc [OPTIONS]
+```
+
+## Commands
+
+GraphDoc operates as a single command with various flags and options. There are no subcommands.
+
+### Version command
+
+Display the current version of GraphDoc:
+
+```bash
+graphdoc --version
+```
+
+### Help command
+
+Display help information with all available options:
+
+```bash
+graphdoc --help
+```
+
+## Flags and options
+
+### Configuration
+
+<ParamField path="-c, --config" type="string" default="./package.json">
+  Path to the configuration file. GraphDoc reads configuration from the `graphdoc` property in this file.
+
+  ```bash
+  graphdoc --config ./custom-config.json
+  ```
+
+  The configuration file should contain a `graphdoc` object with your settings. Command-line flags override configuration file settings.
+</ParamField>
+
+### Schema source
+
+You must provide either `--endpoint` or `--schema-file` to specify your GraphQL schema source.
+
+<ParamField path="-e, --endpoint" type="string">
+  GraphQL HTTP endpoint URL for introspection. GraphDoc will query this endpoint to retrieve the schema.
+
+  ```bash
+  graphdoc --endpoint https://api.example.com/graphql --output ./docs
+  ```
+
+  When using an endpoint, you can add authentication headers with `--header` and query parameters with `--query`.
+</ParamField>
+
+<ParamField path="-s, --schema, --schema-file" type="string">
+  Path to a GraphQL schema file. Supports multiple file formats:
+  - `.json` - GraphQL introspection query result
+  - `.graphql`, `.gql`, `.gqls`, `.graphqls` - GraphQL IDL/SDL files
+  - `.js` - JavaScript file exporting schema definition
+
+  ```bash
+  graphdoc --schema ./schema.graphql --output ./docs
+  ```
+
+  See [Schema sources](/usage/schema-sources) for detailed information about each format.
+</ParamField>
+
+### HTTP options
+
+These flags work in conjunction with `--endpoint`.
+
+<ParamField path="-x, --header" type="string[]">
+  HTTP header to include in the introspection request. Use the format `Name: Value`. You can specify this flag multiple times for multiple headers.
+
+  ```bash
+  graphdoc --endpoint https://api.example.com/graphql \
+    --header "Authorization: Bearer token123" \
+    --header "X-Custom-Header: value" \
+    --output ./docs
+  ```
+
+  Common use cases include authentication tokens, API keys, and custom headers required by your GraphQL endpoint.
+</ParamField>
+
+<ParamField path="-q, --query" type="string[]">
+  HTTP query string parameter to include in the introspection request. Use the format `key=value`. You can specify this flag multiple times for multiple parameters.
+
+  ```bash
+  graphdoc --endpoint https://api.example.com/graphql \
+    --query "token=abc123" \
+    --query "version=v1" \
+    --output ./docs
+  ```
+
+  These parameters are appended to the endpoint URL as query strings.
+</ParamField>
+
+### Output configuration
+
+<ParamField path="-o, --output" type="string" required>
+  Directory path where the generated documentation will be written. This is the only required flag.
+
+  ```bash
+  graphdoc --schema ./schema.graphql --output ./doc/schema
+  ```
+
+  <Warning>
+    The output directory must not exist unless you use the `--force` flag. GraphDoc will fail if the directory already exists to prevent accidental overwrites.
+  </Warning>
+</ParamField>
+
+<ParamField path="-f, --force" type="boolean" default="false">
+  Delete the output directory if it already exists. Use this flag to regenerate documentation and overwrite previous builds.
+
+  ```bash
+  graphdoc --schema ./schema.graphql --output ./docs --force
+  ```
+
+  <Warning>
+    This will permanently delete all contents of the output directory before generating new documentation.
+  </Warning>
+</ParamField>
+
+<ParamField path="-b, --base-url" type="string" default="./">
+  Base URL path for the documentation site. Use this when hosting documentation in a subdirectory.
+
+  ```bash
+  graphdoc --schema ./schema.graphql \
+    --output ./docs \
+    --base-url /api/docs/
+  ```
+
+  This adjusts internal links and asset paths to work correctly when the documentation is served from a subdirectory.
+</ParamField>
+
+### Customization
+
+<ParamField path="-p, --plugin" type="string[]" default="graphdoc/plugins/default">
+  Path to a plugin module. Plugins control the content displayed on documentation pages. You can specify this flag multiple times to use multiple plugins.
+
+  ```bash
+  graphdoc --schema ./schema.graphql \
+    --plugin graphdoc/plugins/default \
+    --plugin ./my-custom-plugin.js \
+    --output ./docs
+  ```
+
+  Plugins can be:
+  - Built-in plugins: `graphdoc/plugins/default`
+  - npm packages: `some-package/plugin`
+  - Local files: `./lib/plugin/my-plugin.js`
+
+  If you don't specify any plugins, GraphDoc uses `graphdoc/plugins/default` automatically.
+</ParamField>
+
+<ParamField path="-t, --template" type="string" default="graphdoc/template/slds">
+  Path to a template directory. Templates define the visual appearance and layout of the generated documentation.
+
+  ```bash
+  graphdoc --schema ./schema.graphql \
+    --template ./my-custom-template \
+    --output ./docs
+  ```
+
+  The default template is Salesforce Lightning Design System (SLDS). Custom templates must follow the GraphDoc template structure with Mustache files.
+</ParamField>
+
+<ParamField path="-d, --data" type="JSON" default="{}">
+  Inject custom data into the documentation context. Provide a JSON string that will be parsed and merged into the configuration.
+
+  ```bash
+  graphdoc --schema ./schema.graphql \
+    --data '{"title":"My API","version":"2.0"}' \
+    --output ./docs
+  ```
+
+  This data becomes available to templates and plugins. The JSON must be valid and properly escaped for your shell.
+</ParamField>
+
+### Logging
+
+<ParamField path="-v, --verbose" type="boolean" default="false">
+  Enable verbose output. Shows detailed information about the documentation generation process, including:
+  - Plugins being loaded
+  - Assets being copied
+  - Each type being rendered
+  - Output directory operations
+
+  ```bash
+  graphdoc --schema ./schema.graphql --output ./docs --verbose
+  ```
+
+  Useful for debugging and understanding what GraphDoc is doing.
+</ParamField>
+
+<ParamField path="-V, --version" type="boolean" default="false">
+  Display the GraphDoc version number and exit.
+
+  ```bash
+  graphdoc --version
+  ```
+</ParamField>
+
+## Complete examples
+
+<CodeGroup>
+
+```bash Endpoint with authentication
+graphdoc \
+  --endpoint https://api.github.com/graphql \
+  --header "Authorization: Bearer ghp_yourtoken" \
+  --output ./docs/github \
+  --force \
+  --verbose
+```
+
+```bash Local schema file
+graphdoc \
+  --schema ./schema.graphql \
+  --output ./docs/api \
+  --base-url /api-docs/ \
+  --verbose
+```
+
+```bash With custom plugin
+graphdoc \
+  --schema ./schema.json \
+  --plugin graphdoc/plugins/default \
+  --plugin ./plugins/custom-nav.js \
+  --template ./templates/custom \
+  --output ./docs \
+  --force
+```
+
+```bash Minimal example
+graphdoc \
+  --endpoint http://localhost:4000/graphql \
+  --output ./docs
+```
+
+</CodeGroup>
+
+## Exit codes
+
+GraphDoc uses standard exit codes:
+
+- `0` - Success: Documentation generated successfully
+- Non-zero - Error: Documentation generation failed
+
+Errors are printed to stderr with descriptive messages.
+
+## Common errors
+
+<Accordion title="Output directory already exists">
+  **Error message:** `./docs already exists (delete it or use the --force flag)`
+
+  **Solution:** Either delete the directory manually or add the `--force` flag to overwrite it:
+
+  ```bash
+  graphdoc --schema ./schema.graphql --output ./docs --force
+  ```
+</Accordion>
+
+<Accordion title="Missing endpoint or schema file">
+  **Error message:** `Endpoint (--endpoint, -e) or Schema File (--schema, -s) are require.`
+
+  **Solution:** You must provide either an endpoint or schema file:
+
+  ```bash
+  # Using endpoint
+  graphdoc --endpoint https://api.example.com/graphql --output ./docs
+
+  # OR using schema file
+  graphdoc --schema ./schema.graphql --output ./docs
+  ```
+</Accordion>
+
+<Accordion title="Missing output directory">
+  **Error message:** `Flag output (-o, --output) is required`
+
+  **Solution:** The `--output` flag is required:
+
+  ```bash
+  graphdoc --schema ./schema.graphql --output ./docs
+  ```
+</Accordion>
+
+<Accordion title="Unexpected schema extension">
+  **Error message:** `Unexpected schema extension name: .txt`
+
+  **Solution:** GraphDoc only supports `.json`, `.graphql`, `.gql`, `.gqls`, `.graphqls`, and `.js` schema files. Convert your schema to one of these formats.
+</Accordion>
+
+<Accordion title="HTTP error from endpoint">
+  **Error message:** `Unexpected HTTP Status Code 401 (Unauthorized)`
+
+  **Solution:** Add authentication headers:
+
+  ```bash
+  graphdoc \
+    --endpoint https://api.example.com/graphql \
+    --header "Authorization: Bearer your-token" \
+    --output ./docs
+  ```
+</Accordion>
+
+## Tips
+
+<Tip>
+  Use `--verbose` during development to see what GraphDoc is doing. This helps debug issues with plugins, templates, or schema loading.
+</Tip>
+
+<Tip>
+  When working with endpoints that require authentication, test your headers with a tool like curl first to ensure they work before using them with GraphDoc.
+</Tip>
+
+<Tip>
+  The `--force` flag is useful in CI/CD pipelines where you want to regenerate documentation on every build without manual cleanup.
+</Tip>
